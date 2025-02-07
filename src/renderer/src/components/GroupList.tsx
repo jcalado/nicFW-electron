@@ -53,7 +53,7 @@ function GroupList({ groups, isConnected, onGroupsReceived }) {
         >
           Write
         </ToolbarButton>
-        <ToolbarDivider/>
+        <ToolbarDivider />
         <ToolbarButton onClick={() => readGroups()} vertical icon={<SaveRegular />}>
           Save
         </ToolbarButton>
