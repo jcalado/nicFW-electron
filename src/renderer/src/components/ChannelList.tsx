@@ -1,5 +1,6 @@
 import {
   Button,
+  Input,
   Table,
   TableBody,
   TableCell,
@@ -8,13 +9,17 @@ import {
   TableRow,
   Title1,
   Toolbar,
-  ToolbarButton
+  ToolbarButton,
+  ToolbarDivider
 } from '@fluentui/react-components'
 import { ArrowDownloadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
 import React, { useState } from 'react'
 
-function ChannelList({ isConnected }) {
-  const [channels, setChannels] = useState([])
+function ChannelList({ channels, isConnected, onReceiveChannels }) {
+
+
+  const [isLoading, setIsLoading] = useState(false)
+  
   const columns = [
     { columnKey: 'channelNumber', label: '🟢 Number' },
     { columnKey: 'name', label: '🏷️ Name' },
@@ -29,11 +34,13 @@ function ChannelList({ isConnected }) {
   ]
 
   const readChannels = () => {
+    setIsLoading(true)
     const result = window.api
       .readChannels()
       .then((data) => {
         console.log(data)
-        setChannels(data)
+        setIsLoading(false)
+        onReceiveChannels(data)
       })
       .catch((error) => {
         console.error('Error reading channels:', error)
@@ -50,7 +57,7 @@ function ChannelList({ isConnected }) {
           appearance="primary"
           icon={<ArrowDownloadRegular />}
         >
-          Read
+          {isLoading ? 'Reading...' : 'Read'}
         </ToolbarButton>
         <ToolbarButton
           onClick={() => readChannels()}
@@ -60,6 +67,7 @@ function ChannelList({ isConnected }) {
         >
           Write
         </ToolbarButton>
+        <ToolbarDivider />
         <ToolbarButton onClick={() => readChannels()} vertical icon={<SaveRegular />}>
           Save
         </ToolbarButton>
