@@ -72,7 +72,7 @@ function App(): JSX.Element {
       </TabList>
       <div className="container">
         {selectedTab === 'port-picker' && (
-          <PortPicker onPortSelect={handlePortSelect} onConnected={handleConnected} />
+          <PortPicker onPortSelect={handlePortSelect} onConnected={handleConnected} isConnected={isConnected} />
         )}
         {selectedTab === 'channel-list' && <ChannelList channels={channels} isConnected={isConnected} onReceiveChannels={handleChannelsReceived}/>}
         {selectedTab === 'group-list' && <GroupList groups={groups} isConnected={isConnected} onGroupsReceived={handleGroupsReceived} />}
