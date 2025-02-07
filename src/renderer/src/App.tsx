@@ -11,6 +11,7 @@ function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
   const [selectedPort, setSelectedPort] = useState('')
   const [isConnected, setIsConnected] = useState(false)
+  const [channels, setChannels] = useState([])
   const [bands, setBands] = useState([])
   const [groups, setGroups] = useState([])
 
@@ -39,6 +40,11 @@ function App(): JSX.Element {
     setGroups(groups)
   }
 
+  const handleChannelsReceived = (channels: any[]): void => {
+    console.log(`Received channels: ${bands}`)
+    setChannels(channels)
+  }
+
   const statusColor = isConnected ? 'green' : 'red'
 
   return (
@@ -52,10 +58,10 @@ function App(): JSX.Element {
           Connection {isConnected ? selectedPort : ''}
         </Tab>
         <Tab key="channel-list" value={'channel-list'}>
-          Channels
+          Channels {channels && channels.length > 0 ? `(${channels.length})` : ''}
         </Tab>
         <Tab key="group-list" value={'group-list'}>
-          Groups
+          Groups {groups && groups.length > 0 ? `(${groups.length})` : ''}
         </Tab>
         <Tab key="bandplan-list" value={'bandplan-list'}>
           Band Plan
@@ -68,7 +74,7 @@ function App(): JSX.Element {
         {selectedTab === 'port-picker' && (
           <PortPicker onPortSelect={handlePortSelect} onConnected={handleConnected} />
         )}
-        {selectedTab === 'channel-list' && <ChannelList isConnected={isConnected} />}
+        {selectedTab === 'channel-list' && <ChannelList channels={channels} isConnected={isConnected} onReceiveChannels={handleChannelsReceived}/>}
         {selectedTab === 'group-list' && <GroupList groups={groups} isConnected={isConnected} onGroupsReceived={handleGroupsReceived} />}
         {selectedTab === 'bandplan-list' && (
           <BandPlanList
