@@ -10,6 +10,7 @@ export interface IApi {
   readGroups: (port) => Promise<void>
   writeChannel: (channelNumber, channelData) => Promise<void>
   flashFirmware: (filePath) => Promise<void>
+  getLatestFirmware: () => Promise<void>
 }
 
 declare global {

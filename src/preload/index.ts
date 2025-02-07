@@ -11,6 +11,9 @@ const api = {
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
   writeChannel: (channelNumber, channelData) => ipcRenderer.invoke('write-channel', channelNumber, channelData),
   flashFirmware: (filePath) => ipcRenderer.invoke('flash-firmware', filePath),
+
+  getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
+  getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

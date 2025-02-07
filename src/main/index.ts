@@ -6,8 +6,9 @@ import icon from '../../resources/icon.png?asset'
 import RadioCommunicator from '../radio/radio-communicator.js'
 import SerialConnection from '../radio/serial-connection.js'
 import { readChannelMemories, encodeChannelBlock } from '../radio/channel-memories.js'
-import { readGroupLabels, writeGroupLabel } from "../radio/group-labels.js";
-import { readBandPlan } from "../radio/band-plan.js";
+import { readGroupLabels, writeGroupLabel } from '../radio/group-labels.js'
+import { readBandPlan } from '../radio/band-plan.js'
+import { FirmwareDownloader } from '../radio/firmware-downloader.js'
 
 const radio = new RadioCommunicator()
 
@@ -151,5 +152,34 @@ ipcMain.handle('radio:readBands', async (_e) => {
     return bandplan
   } catch (error) {
     console.error('Error connecting to serial port:', error)
+  }
+})
+
+ipcMain.handle('firmware:getLatest', async (_e) => {
+  try {
+    const updater = new FirmwareDownloader('.')
+    const result = await updater.checkForUpdates('.')
+
+    if (result.updated) {
+      console.log(`Successfully downloaded version ${result.version}`)
+      console.log(`Firmware saved to: ${result.path}`)
+    } else {
+      console.log('No update needed - already have latest version')
+    }
+  } catch (error) {
+    console.error('Firmware update check failed:', error.message)
+    process.exit(1)
+  }
+})
+
+ipcMain.handle('firmware:getLatestVersion', async (_e) => {
+  try {
+    const updater = new FirmwareDownloader('.')
+    const result = await updater.getLatestVersion()
+
+    return result
+  } catch (error) {
+    console.error('Firmware update check failed:', error.message)
+    process.exit(1)
   }
 })

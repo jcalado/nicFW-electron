@@ -7,6 +7,7 @@ import { CheckmarkCircleFilled } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
 import { Band, Group, Channel } from './types'
+import Firmware from './components/Firmware'
 
 function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
@@ -72,7 +73,7 @@ function App(): JSX.Element {
         <Tab key="bandplan-list" value={'bandplan-list'}>
           Band Plan
         </Tab>
-        <Tab key="firmware" value={'fw-list'}>
+        <Tab key="firmware" value={'firmware'}>
           Firmware
         </Tab>
       </TabList>
@@ -105,6 +106,7 @@ function App(): JSX.Element {
             onBandsReceived={handleBandsReceived}
           />
         )}
+        {selectedTab === 'firmware' && <Firmware isConnected={isConnected} />}
       </div>
     </>
   )

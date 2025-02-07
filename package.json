@@ -25,6 +25,8 @@
     "@electron-toolkit/utils": "^3.0.0",
     "@fluentui/react-components": "^9.58.2",
     "@fluentui/react-icons": "^2.0.274",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
     "electron-updater": "^6.1.7",
     "serialport": "^13.0.0"
   },
