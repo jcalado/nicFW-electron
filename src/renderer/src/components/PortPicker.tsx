@@ -1,24 +1,32 @@
-import { Button, Select } from '@fluentui/react-components'
+import { FC } from 'react'
+import { Button, Select, SelectProps } from '@fluentui/react-components'
+import PropTypes from 'prop-types'
 import { useEffect, useState } from 'react'
+import { SerialPort } from 'serialport'
 
-const PortPicker = ({ onPortSelect, onConnected, isConnected }) => {
-  const [ports, setPorts] = useState([])
+interface PortPickerProps {
+  onPortSelect: (port: string) => void
+  onConnected: (connected: string) => void
+  isConnected: boolean
+}
+
+const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnected }) => {
+  const [ports, setPorts] = useState<SerialPort[]>([])
   const [selectedPort, setSelectedPort] = useState('')
 
   useEffect(() => {
     window.api.getSerialPorts().then(setPorts)
   }, [])
 
-  const onChange: SelectProps['onChange'] = (event, data) => {
+  const onChange: SelectProps['onChange'] = (_event, data) => {
     setSelectedPort(data.value)
     onPortSelect(data.value)
   }
 
-  const handleConnect = () => {
+  const handleConnect = (): void => {
     if (selectedPort) {
       window.api.connectPort(selectedPort).then(() => {
         console.log('Connected to port:', selectedPort)
-
         onConnected(selectedPort)
       })
     } else {
@@ -26,19 +34,22 @@ const PortPicker = ({ onPortSelect, onConnected, isConnected }) => {
     }
   }
 
-  const handleDisconnect = () => {
+  const handleDisconnect = (): void => {
     if (selectedPort) {
-      window.api.disconnectPort(selectedPort).then(() => {
-        console.log('Disconnected from port:', selectedPort)
-        setSelectedPort('')
-        onConnected('')
-      })
-    } else {
-      alert('Please select a port first.')
+      try {
+        window.api.disconnectPort(selectedPort).then(() => {
+          console.log('Disconnected from port:', selectedPort)
+
+          onConnected('')
+        })
+      } catch (error) {
+        console.log(error)
+        alert('Please select a port first.')
+      }
     }
   }
 
-  const handleRefresh = () => {
+  const handleRefresh = (): void => {
     window.api.getSerialPorts().then(setPorts)
   }
 
@@ -65,6 +76,12 @@ const PortPicker = ({ onPortSelect, onConnected, isConnected }) => {
       </Button>
     </div>
   )
+}
+
+PortPicker.propTypes = {
+  onPortSelect: PropTypes.func.isRequired,
+  onConnected: PropTypes.func.isRequired,
+  isConnected: PropTypes.bool.isRequired
 }
 
 export default PortPicker

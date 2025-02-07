@@ -1,46 +1,52 @@
-import { PresenceBadge, Tab, TabList } from '@fluentui/react-components'
+import { SelectTabData, SelectTabEvent, Tab, TabList } from '@fluentui/react-components'
 import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 
 import { useState } from 'react'
-import { CheckmarkCircleFilled, SaveRegular } from '@fluentui/react-icons'
+import { CheckmarkCircleFilled } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
+import { Band, Group, Channel } from './types'
 
 function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
   const [selectedPort, setSelectedPort] = useState('')
   const [isConnected, setIsConnected] = useState(false)
-  const [channels, setChannels] = useState([])
-  const [bands, setBands] = useState([])
-  const [groups, setGroups] = useState([])
+
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [bands, setBands] = useState<Band[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
 
   const handlePortSelect = (port: string): void => {
     console.log(`Selected port: ${port}`)
     setSelectedPort(port)
   }
 
-  const handleConnected = (connected: boolean): void => {
+  const handleConnected = (connected: string): void => {
     console.log(`Connection status changed to ${connected}`)
-    setIsConnected(connected)
+    if (connected !== '') {
+      setIsConnected(true)
+    } else {
+      setIsConnected(false)
+    }
   }
 
-  const handleTabSelect = (_e, tab: any): void => {
-    console.log(`Selected tab: ${tab.value}`)
-    setSelectedTab(tab.value)
+  const handleTabSelect = (_event: SelectTabEvent, data: SelectTabData): void => {
+    console.log(`Selected tab: ${data.value}`)
+    setSelectedTab(data.value as string)
   }
 
-  const handleBandsReceived = (bands: any[]): void => {
+  const handleBandsReceived = (bands: Band[]): void => {
     console.log(`Received bands: ${bands}`)
     setBands(bands)
   }
 
-  const handleGroupsReceived = (groups: any[]): void => {
-    console.log(`Received groups: ${bands}`)
+  const handleGroupsReceived = (groups: Group[]): void => {
+    console.log(`Received groups: ${groups}`)
     setGroups(groups)
   }
 
-  const handleChannelsReceived = (channels: any[]): void => {
+  const handleChannelsReceived = (channels: Channel[]): void => {
     console.log(`Received channels: ${bands}`)
     setChannels(channels)
   }
@@ -72,10 +78,26 @@ function App(): JSX.Element {
       </TabList>
       <div className="container">
         {selectedTab === 'port-picker' && (
-          <PortPicker onPortSelect={handlePortSelect} onConnected={handleConnected} isConnected={isConnected} />
+          <PortPicker
+            onPortSelect={handlePortSelect}
+            onConnected={handleConnected}
+            isConnected={isConnected}
+          />
         )}
-        {selectedTab === 'channel-list' && <ChannelList channels={channels} isConnected={isConnected} onReceiveChannels={handleChannelsReceived}/>}
-        {selectedTab === 'group-list' && <GroupList groups={groups} isConnected={isConnected} onGroupsReceived={handleGroupsReceived} />}
+        {selectedTab === 'channel-list' && (
+          <ChannelList
+            channels={channels}
+            isConnected={isConnected}
+            onReceiveChannels={handleChannelsReceived}
+          />
+        )}
+        {selectedTab === 'group-list' && (
+          <GroupList
+            groups={groups}
+            isConnected={isConnected}
+            onGroupsReceived={handleGroupsReceived}
+          />
+        )}
         {selectedTab === 'bandplan-list' && (
           <BandPlanList
             bands={bands}
