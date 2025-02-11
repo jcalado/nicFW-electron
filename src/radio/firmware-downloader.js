@@ -5,21 +5,22 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import chalk from 'chalk'
-
+import { app } from 'electron'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export class FirmwareDownloader {
   static BASE_URL = 'https://www.nicsure.co.uk/h3/nightly.php'
   static HTTPS_AGENT = new https.Agent({ rejectUnauthorized: false })
 
-  constructor(outputDir = 'firmware') {
-    this.outputDir = path.resolve(outputDir)
+  constructor() {
+    this.outputDir = `${app.getPath('userData')}/firmware`
     this.versionFile = path.join(this.outputDir, 'latest_version.txt')
     this.ensureOutputDir()
   }
 
   ensureOutputDir() {
     if (!fs.existsSync(this.outputDir)) {
+      console.log('Creating firmware output directory:', this.outputDir)
       fs.mkdirSync(this.outputDir, { recursive: true })
     }
   }
@@ -37,7 +38,7 @@ export class FirmwareDownloader {
 
   async downloadFile(url, version) {
     const outputFilename = `firmware_v2_${version}.bin`
-    const outputPath = path.join(this.outputDir, outputFilename)
+    const outputPath = `${app.getPath('userData')}/firmware/${outputFilename}`;
 
     const writer = fs.createWriteStream(outputPath)
     const response = await axios.get(url, {
@@ -56,6 +57,7 @@ export class FirmwareDownloader {
   parseFirmwareInfo(html) {
     const $ = cheerio.load(html)
     const version = $('#versionNum2').val()
+    const releaseType = $('#releaseType2').val()
 
     if (!version) {
       throw new Error('Firmware version not found in page')
@@ -63,7 +65,8 @@ export class FirmwareDownloader {
 
     return {
       version,
-      firmwareLink: 'https://www.nicsure.co.uk/h3/firmware2.bin'
+      firmwareLink: 'https://www.nicsure.co.uk/h3/firmware2.bin',
+      releaseType
     }
   }
 
@@ -103,8 +106,9 @@ export class FirmwareDownloader {
         httpsAgent: FirmwareDownloader.HTTPS_AGENT
       })
 
-      const { version, firmwareLink } = this.parseFirmwareInfo(response.data)
-      return version
+      const { version, firmwareLink, releaseType } = this.parseFirmwareInfo(response.data)
+      console.log(releaseType)
+      return { version, firmwareLink, releaseType }
     } catch (error) {
       console.error('Firmware check failed:', error.message)
       throw error
