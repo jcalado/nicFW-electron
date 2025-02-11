@@ -3,7 +3,7 @@ import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 
 import { useState } from 'react'
-import { CheckmarkCircleFilled } from '@fluentui/react-icons'
+import { ChannelFilled, ChannelRegular, CheckmarkCircleFilled, DeveloperBoardLightningFilled, GroupListFilled, GroupListRegular, SlideTransitionFilled } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
 import { Band, Group, Channel } from './types'
@@ -64,16 +64,16 @@ function App(): JSX.Element {
         >
           Connection {isConnected ? selectedPort : ''}
         </Tab>
-        <Tab key="channel-list" value={'channel-list'}>
+        <Tab key="channel-list" value={'channel-list'} icon={<ChannelFilled />}>
           Channels {channels && channels.length > 0 ? `(${channels.length})` : ''}
         </Tab>
-        <Tab key="group-list" value={'group-list'}>
+        <Tab key="group-list" value={'group-list'} icon={<GroupListFilled />}>
           Groups {groups && groups.length > 0 ? `(${groups.length})` : ''}
         </Tab>
-        <Tab key="bandplan-list" value={'bandplan-list'}>
+        <Tab key="bandplan-list" value={'bandplan-list'} icon={<SlideTransitionFilled />}>
           Band Plan
         </Tab>
-        <Tab key="firmware" value={'firmware'}>
+        <Tab key="firmware" value={'firmware'} icon={<DeveloperBoardLightningFilled />}>
           Firmware
         </Tab>
       </TabList>
