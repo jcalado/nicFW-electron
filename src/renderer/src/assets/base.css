@@ -83,3 +83,11 @@ body {
 .flex-col {
   flex-direction: column;
 }
+
+.gap-4 {
+  gap: 12px;
+}
+
+.w-28 {
+  width: 10rem;
+}
