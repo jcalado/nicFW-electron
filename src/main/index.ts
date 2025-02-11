@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, dialog, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -9,6 +9,8 @@ import { readChannelMemories, encodeChannelBlock } from '../radio/channel-memori
 import { readGroupLabels, writeGroupLabel } from '../radio/group-labels.js'
 import { readBandPlan } from '../radio/band-plan.js'
 import { FirmwareDownloader } from '../radio/firmware-downloader.js'
+
+import fs from 'fs'
 
 const radio = new RadioCommunicator()
 
@@ -182,4 +184,21 @@ ipcMain.handle('firmware:getLatestVersion', async (_e) => {
     console.error('Firmware update check failed:', error.message)
     process.exit(1)
   }
+})
+
+ipcMain.handle('dialog:showMessageBox', async (_e, options) => {
+  return await dialog.showMessageBox(options)
+})
+
+ipcMain.handle('firmware:getArchive', async (_e) => {
+  const firmwarePath = `${app.getPath('userData')}/firmware`
+
+  // List every firmware on the archive. Files are at archivePath/firmware
+  console.log('Listing firmware archive')
+  console.log(firmwarePath)
+  // Return the list of files
+  const files = await fs.promises.readdir(`${firmwarePath}`)
+
+  // Only return files with .bin extension
+  return files.filter((file) => file.endsWith('.bin'))
 })
