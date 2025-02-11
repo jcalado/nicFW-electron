@@ -14,6 +14,11 @@ const api = {
 
   getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
   getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
+  getFirmwareArchive: () => ipcRenderer.invoke('firmware:getArchive'),
+}
+
+const dialog = {
+  showMessageBox: (options) => ipcRenderer.invoke('dialog:showMessageBox', options)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
@@ -23,6 +28,7 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('dialog', dialog)
   } catch (error) {
     console.error(error)
   }
@@ -31,4 +37,5 @@ if (process.contextIsolated) {
   window.electron = electronAPI
   // @ts-ignore (define in dts)
   window.api = api
+  window.dialog = dialog
 }
