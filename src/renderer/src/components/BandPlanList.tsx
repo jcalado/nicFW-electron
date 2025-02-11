@@ -9,7 +9,8 @@ import {
   TableRow,
   Title1,
   Toolbar,
-  ToolbarButton
+  ToolbarButton,
+  ToolbarDivider
 } from '@fluentui/react-components'
 import { ArrowDownloadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
 import React, { useState } from 'react'
@@ -61,6 +62,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
         >
           Write
         </ToolbarButton>
+        <ToolbarDivider/>
         <ToolbarButton onClick={() => readBandPlan()} vertical icon={<SaveRegular />}>
           Save
         </ToolbarButton>
