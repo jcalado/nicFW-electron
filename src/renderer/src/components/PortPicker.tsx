@@ -3,6 +3,12 @@ import { Button, Select, SelectProps } from '@fluentui/react-components'
 import PropTypes from 'prop-types'
 import { useEffect, useState } from 'react'
 import { SerialPort } from 'serialport'
+import {
+  ArrowSyncRegular,
+  PlugConnectedRegular,
+  PlugDisconnectedRegular
+} from '@fluentui/react-icons'
+import { makeStyles, typographyStyles } from '@fluentui/react-components'
 
 interface PortPickerProps {
   onPortSelect: (port: string) => void
@@ -10,9 +16,25 @@ interface PortPickerProps {
   isConnected: boolean
 }
 
+const useStyles = makeStyles({
+  header: {
+    ...typographyStyles.title2,
+    flex: 1
+  },
+  subheader: {
+    ...typographyStyles.subtitle1,
+    marginTop: '0px'
+  },
+  archiveHeader: {
+    ...typographyStyles.subtitle2,
+    marginTop: '40px'
+  }
+})
+
 const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnected }) => {
   const [ports, setPorts] = useState<SerialPort[]>([])
   const [selectedPort, setSelectedPort] = useState('')
+  const styles = useStyles()
 
   useEffect(() => {
     window.api.getSerialPorts().then(setPorts)
@@ -55,25 +77,32 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
 
   return (
     <div className="flex flex-col gap-4 p-4">
+      <h1 className={styles.subheader}>Select port</h1>
       <div className="flex flex-row gap-4 p-4">
         <Select onChange={onChange} className="w-28">
-          <option>Select port</option>
+          <option value="">None</option>
           {ports.map((port) => (
             <option key={port.path} value={port.path}>
               {port.path} ({port.manufacturer || 'Unknown'})
             </option>
           ))}
         </Select>
-        <Button disabled={isConnected} onClick={handleRefresh}>
+        <Button disabled={isConnected} onClick={handleRefresh} icon={<ArrowSyncRegular />}>
           Refresh
         </Button>
       </div>
-      <Button disabled={isConnected} onClick={handleConnect}>
-        Connect
-      </Button>
-      <Button disabled={!isConnected} onClick={handleDisconnect}>
-        Disconnect
-      </Button>
+      <div className="flex flex-row gap-4">
+        <Button disabled={isConnected} onClick={handleConnect} icon={<PlugConnectedRegular />}>
+          Connect
+        </Button>
+        <Button
+          disabled={!isConnected}
+          onClick={handleDisconnect}
+          icon={<PlugDisconnectedRegular />}
+        >
+          Disconnect
+        </Button>
+      </div>
     </div>
   )
 }
