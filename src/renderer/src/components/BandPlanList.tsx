@@ -17,7 +17,7 @@ import React, { useState } from 'react'
 import {toDecimalFreq} from '../../../utils/converters.js'
 
 function BandPlanList({ bands, isConnected, onBandsReceived }) {
-  
+
   const columns = [
     { columnKey: 'bandNumber', label: 'Number' },
     { columnKey: 'start', label: 'Start' },
@@ -27,7 +27,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
     { columnKey: 'wrap', label: 'Wrap' },
     { columnKey: 'modulation', label: 'Modulation' },
     { columnKey: 'bandwidth', label: 'Bandwidth' },
-    
+
   ]
 
   const readBandPlan = () => {

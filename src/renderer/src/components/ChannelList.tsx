@@ -19,18 +19,18 @@ function ChannelList({ channels, isConnected, onReceiveChannels }) {
 
 
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const columns = [
-    { columnKey: 'channelNumber', label: '🟢 Number' },
-    { columnKey: 'name', label: '🏷️ Name' },
-    { columnKey: 'rxFreq', label: '🔽 RX Frequency' },
-    { columnKey: 'txFreq', label: '🔼 TX Frequency' },
+    { columnKey: 'channelNumber', label: 'Number' },
+    { columnKey: 'name', label: 'Name' },
+    { columnKey: 'rxFreq', label: 'RX Freq.' },
+    { columnKey: 'txFreq', label: 'TX Freq.' },
     { columnKey: 'rxTone', label: 'RX Tone' },
     { columnKey: 'txTone', label: 'TX Tone' },
     { columnKey: 'groups', label: 'Groups' },
     { columnKey: 'modulation', label: 'Modulation' },
-    { columnKey: 'bandwidth', label: '📡 Bandwidth' },
-    { columnKey: 'txPower', label: '💣 TX Power' }
+    { columnKey: 'bandwidth', label: 'Bandwidth' },
+    { columnKey: 'txPower', label: 'TX Power' }
   ]
 
   const readChannels = () => {

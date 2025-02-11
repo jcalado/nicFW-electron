@@ -235,8 +235,9 @@ class RadioCommunicator extends EventEmitter {
     })
   }
 
-  async flashFirmware(firmware) {
+  async flashFirmware(firmware: Buffer, progressCallback?: (progress: number) => void) {
     const originalBaud = this.currentBaudRate
+    const totalBlocks = Math.ceil(firmware.length / 32);
 
     this.port.close()
     this.port = new SerialPort({
@@ -334,6 +335,7 @@ class RadioCommunicator extends EventEmitter {
         const updateProgress = () => {
           const percent = ((currentBlock / totalBlocks) * 100).toFixed(1)
           process.stdout.write(`\rFlashing progress: ${percent}%`)
+          progressCallback(percent)
           if (currentBlock >= totalBlocks) process.stdout.write('\n')
         }
 

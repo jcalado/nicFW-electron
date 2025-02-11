@@ -199,6 +199,37 @@ ipcMain.handle('firmware:getArchive', async (_e) => {
   // Return the list of files
   const files = await fs.promises.readdir(`${firmwarePath}`)
 
+  // Get the created at date for each file and send it back
+  const filesWithDates = await Promise.all(
+    files.filter((file) => file.endsWith('.bin')).map(async (file) => {
+      const stats = await fs.promises.stat(`${firmwarePath}/${file}`)
+      return { file, created: stats.birthtime }
+    })
+  )
+
   // Only return files with .bin extension
-  return files.filter((file) => file.endsWith('.bin'))
+  console.log(filesWithDates)
+  return filesWithDates
 })
+
+
+ipcMain.handle(
+  'firmware:flash',
+  async (event, filePath: string, progressCallback: (progress: number) => void) => {
+    console.log("Flashing firmware")
+    try {
+      const firmwareData = fs.readFileSync(`${app.getPath('userData')}/firmware/${filePath}`);
+
+      await radio.setBaudRate(115200);
+      await radio.connect()
+      await radio.flashFirmware(firmwareData, (progress: number) => {
+        event.sender.send('firmware:progress', progress);
+      });
+      await radio.close();
+
+      return true;
+    } catch (error) {
+      throw new Error(`Firmware flash failed: ${error.message}`);
+    }
+  }
+);

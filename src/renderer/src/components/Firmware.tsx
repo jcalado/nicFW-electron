@@ -1,5 +1,6 @@
 import {
   Button,
+  ProgressBar,
   Spinner,
   Table,
   TableBody,
@@ -17,7 +18,7 @@ import { useEffect, useState } from 'react'
 const useStyles = makeStyles({
   header: typographyStyles.title2,
   subheader: {
-    ...typographyStyles.subtitle1,
+    ...typographyStyles.subtitle2,
     marginTop: '0px'
   },
   archiveHeader: {
@@ -30,8 +31,10 @@ function Firmware({ isConnected }) {
   const [version, setVersion] = useState({ version: '', releaseType: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [releaseType, setReleaseType] = useState('')
-  const [archive, setArchive] = useState([''])
+  const [archive, setArchive] = useState([{ file: '', created: '' }])
   const [selectedFirmware, setSelectedFirmware] = useState('')
+  const [progress, setProgress] = useState(0)
+  const [isFlashing, setIsFlashing] = useState(false)
 
   const downloadLatest = async () => {
     const { version, firmwareLink, releaseType } = await window.api.getLatestFirmware()
@@ -41,13 +44,7 @@ function Firmware({ isConnected }) {
   const flashFirmware = async () => {
     console.log('Flashing firmware')
     // First open a confirmation dialog
-    const result = await window.dialog.showMessageBox({
-      type: 'question',
-      title: 'Flash firmware',
-      message: `Are you sure you want to flash ${selectedFirmware}?`,
-      buttons: ['Yes', 'No']
-    })
-    console.log(result)
+
   }
 
   useEffect(() => {
@@ -70,12 +67,34 @@ function Firmware({ isConnected }) {
 
   const columns = [
     { columnKey: 'file', label: 'File' },
-    { columnKey: 'created', label: 'Created At' },
+    { columnKey: 'created', label: 'Downloaded' },
     { columnKey: 'options', label: '' }
   ]
 
   const handleFlash = async (item) => {
-    setSelectedFirmware(item)
+    setSelectedFirmware(item.file)
+    if (!isConnected) {
+      alert('Please connect to the radio first')
+      return
+    }
+    const result = await window.dialog.showMessageBox({
+      type: 'question',
+      title: 'Flash firmware',
+      message: `Are you sure you want to flash ${selectedFirmware}?`,
+      buttons: ['Yes', 'No']
+    })
+    console.log(result.response)
+
+    if (result.response === 0) {
+      setIsFlashing(true)
+      window.api.onFirmwareProgress((progress) => {
+        console.log('Progress:', progress)
+        setProgress(progress)
+      })
+
+      const r = await window.api.flashFirmware(selectedFirmware)
+      console.log(r)
+    }
   }
 
   return (
@@ -93,11 +112,36 @@ function Firmware({ isConnected }) {
           vertical
           icon={<UsbPlugRegular />}
           onClick={flashFirmware}
-          disabled={!isConnected && selectedFirmware === ''}
+          disabled={!isConnected }
         >
-          Flash
+          Flash file
         </ToolbarButton>
       </Toolbar>
+      {isFlashing && (
+        <div
+          style={{
+            padding: '32px 16px',
+            marginTop: '20px',
+            marginBottom: '20px',
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '8px'
+          }}
+        >
+          <h1 className={styles.subheader}>
+            {progress <= 0 ? 'Waiting for radio...' : `Flashing... ${progress}%`}
+          </h1>
+          <ProgressBar value={progress} max={100} thickness="large" />
+          <div style={{ marginTop: '16px' }}>
+            <p>Set the radio to bootloader mode:</p>
+            <ol style={{ paddingLeft: '16px' }}>
+              <li>Turn radio OFF</li>
+              <li>Press and hold PTT (H3) or Flashlight (H8) button</li>
+              <li>Turn radio ON while holding button</li>
+              <li>Release button when instructed</li>
+            </ol>
+          </div>
+        </div>
+      )}
       <h1 className={styles.header}>Latest nightly version</h1>
       {isLoading ? (
         <Spinner />
@@ -119,9 +163,9 @@ function Firmware({ isConnected }) {
           {archive &&
             archive.length > 0 &&
             archive.map((item) => (
-              <TableRow key={item} onClick={() => console.log('clicked')}>
-                <TableCell>{item}</TableCell>
-                <TableCell>{item}</TableCell>
+              <TableRow key={item.file}>
+                <TableCell>{item.file}</TableCell>
+                <TableCell>{item.created.toLocaleString()}</TableCell>
                 <TableCell>
                   <Button size="small" onClick={() => handleFlash(item)}>
                     Flash

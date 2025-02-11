@@ -10,8 +10,10 @@ const api = {
   readBandPlan: (port) => ipcRenderer.invoke('radio:readBands', port),
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
   writeChannel: (channelNumber, channelData) => ipcRenderer.invoke('write-channel', channelNumber, channelData),
-  flashFirmware: (filePath) => ipcRenderer.invoke('flash-firmware', filePath),
-
+  flashFirmware: (firmware) => ipcRenderer.invoke('firmware:flash', firmware),
+  onFirmwareProgress: (callback) => {
+    ipcRenderer.on('firmware:progress', (_event, progress) => callback(progress));
+  },
   getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
   getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
   getFirmwareArchive: () => ipcRenderer.invoke('firmware:getArchive'),
