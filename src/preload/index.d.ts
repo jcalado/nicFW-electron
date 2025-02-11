@@ -11,6 +11,7 @@ export interface IApi {
   writeChannel: (channelNumber, channelData) => Promise<void>
   flashFirmware: (filePath) => Promise<void>
   getLatestFirmware: () => Promise<void>
+  getFirmwareArchive: () => Promise<void>
 }
 
 declare global {
