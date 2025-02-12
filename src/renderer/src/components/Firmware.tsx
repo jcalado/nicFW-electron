@@ -87,6 +87,7 @@ function Firmware({ isConnected }) {
 
     if (result.response === 0) {
       setIsFlashing(true)
+      setProgress(0)
       window.api.onFirmwareProgress((progress) => {
         console.log('Progress:', progress)
         setProgress(progress)
@@ -117,7 +118,7 @@ function Firmware({ isConnected }) {
           Flash file
         </ToolbarButton>
       </Toolbar>
-      {isFlashing && (
+      {isFlashing && progress < 100  && (
         <div
           style={{
             padding: '32px 16px',
@@ -131,7 +132,7 @@ function Firmware({ isConnected }) {
             {progress <= 0 ? 'Waiting for radio...' : `Flashing... ${progress}%`}
           </h1>
           <ProgressBar value={progress} max={100} thickness="large" />
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px' }} hidden={isFlashing && progress > 0}>
             <p>Set the radio to bootloader mode:</p>
             <ol style={{ paddingLeft: '16px' }}>
               <li>Turn radio OFF</li>
