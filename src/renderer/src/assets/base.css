@@ -43,7 +43,16 @@ ul {
   list-style: none;
 }
 
+
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 body {
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
