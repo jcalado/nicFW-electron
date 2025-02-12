@@ -44,7 +44,6 @@ function Firmware({ isConnected }) {
   const flashFirmware = async () => {
     console.log('Flashing firmware')
     // First open a confirmation dialog
-
   }
 
   useEffect(() => {
@@ -113,12 +112,12 @@ function Firmware({ isConnected }) {
           vertical
           icon={<UsbPlugRegular />}
           onClick={flashFirmware}
-          disabled={!isConnected }
+          disabled={!isConnected}
         >
           Flash file
         </ToolbarButton>
       </Toolbar>
-      {isFlashing && progress < 100  && (
+      {isFlashing && progress < 100 && (
         <div
           style={{
             padding: '32px 16px',
@@ -163,20 +162,27 @@ function Firmware({ isConnected }) {
         <TableBody>
           {archive &&
             archive.length > 0 &&
-            archive.map((item) => (
-              <TableRow key={item.file}>
-                <TableCell>{item.file}</TableCell>
-                <TableCell>{item.created.toLocaleString()}</TableCell>
-                <TableCell>
-                  <Button size="small" onClick={() => handleFlash(item)}>
-                    Flash
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            archive
+              .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
+              .map((item) => (
+                <TableRow key={item.file}>
+                  <TableCell>{extractVersionFromFile(item.file)}</TableCell>
+                  <TableCell>{new Date(item.created).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Button size="small" onClick={() => handleFlash(item)}>
+                      Flash
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
         </TableBody>
       </Table>
     </div>
   )
 }
+const extractVersionFromFile = (fileName: string): string => {
+  const match = fileName.match(/v\d+_(\d+\.\d+\.\d+)\.bin/)
+  return match ? match[1] : fileName
+}
+
 export default Firmware
