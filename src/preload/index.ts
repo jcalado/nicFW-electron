@@ -17,6 +17,12 @@ const api = {
   getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
   getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
   getFirmwareArchive: () => ipcRenderer.invoke('firmware:getArchive'),
+
+  openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+  saveFileDialog: () => ipcRenderer.invoke('dialog:saveFile'),
+
+  readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
+  writeFile: (filePath: string, data: string) => ipcRenderer.invoke('file:write', filePath, data),
 }
 
 const dialog = {
