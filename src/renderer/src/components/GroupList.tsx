@@ -17,8 +17,8 @@ import React, { useState } from 'react'
 function GroupList({ groups, isConnected, onGroupsReceived }) {
 
   const columns = [
-    { columnKey: 'group', label: '🟢 Group' },
-    { columnKey: 'label', label: '🏷️ Label' },
+    { columnKey: 'group', label: 'Group' },
+    { columnKey: 'label', label: 'Label' },
   ]
 
   const readGroups = () => {
