@@ -5,15 +5,13 @@ import icon from '../../resources/icon.png?asset'
 
 import RadioCommunicator from '../radio/radio-communicator.js'
 import SerialConnection from '../radio/serial-connection.js'
-import { readChannelMemories, encodeChannelBlock } from '../radio/channel-memories.js'
-import { readGroupLabels, writeGroupLabel } from '../radio/group-labels.js'
-import { readBandPlan } from '../radio/band-plan.js'
+
 import { FirmwareDownloader } from '../radio/firmware-downloader.js'
 
-import fs from 'fs'
+import { setupFileHandlers, setupRadioHandlers, setupFirmwareHandlers } from './ipcHandlers'
+import { setupSerialHandlers } from './ipcHandlers/serialHandlers'
 
 const radio = new RadioCommunicator()
-
 const serialConnection = new SerialConnection()
 
 function createWindow(): void {
@@ -86,150 +84,11 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
 
-ipcMain.handle('radio:read-channels', async (event, port) => {
-  // const radio = new RadioCommunicator(port)
-  await radio.connect()
-  await radio.initialize()
-  const channels = await readChannelMemories(radio)
-
-  console.log(channels)
-})
-
-ipcMain.handle('serial:list', async () => {
-  try {
-    const ports = await serialConnection.getSerialPorts()
-    console.log(ports)
-    return ports
-  } catch (error) {
-    console.error('Error getting serial ports:', error)
-  }
-})
-
-ipcMain.handle('serial:connect', async (_e, path) => {
-  try {
-    await radio.setPortPath(path)
-    await radio.connect(path)
-    console.log(`Connected to radio at port: ${radio.currentPortPath}`)
-    return radio.currentPortPath
-  } catch (error) {
-    console.error('Error connecting to serial port:', error)
-  }
-})
-
-ipcMain.handle('serial:disconnect', async (_e, path) => {
-  try {
-    await radio.disconnect()
-  } catch (error) {
-    console.error('Error connecting to serial port:', error)
-  }
-})
-
-ipcMain.handle('radio:readChannels', async (_e) => {
-  try {
-    await radio.initialize()
-    const channels = await readChannelMemories(radio)
-    console.log(channels)
-    return channels
-  } catch (error) {
-    console.error('Error connecting to serial port:', error)
-  }
-})
-
-ipcMain.handle('radio:readGroups', async (_e) => {
-  try {
-    await radio.initialize()
-    const groups = await readGroupLabels(radio)
-    console.log(groups)
-    return groups
-  } catch (error) {
-    console.error('Error connecting to serial port:', error)
-  }
-})
-
-ipcMain.handle('radio:readBands', async (_e) => {
-  try {
-    await radio.initialize()
-    const bandplan = await readBandPlan(radio)
-    console.log(bandplan)
-    return bandplan
-  } catch (error) {
-    console.error('Error connecting to serial port:', error)
-  }
-})
-
-ipcMain.handle('firmware:getLatest', async (_e) => {
-  try {
-    const updater = new FirmwareDownloader('.')
-    const result = await updater.checkForUpdates('.')
-
-    if (result.updated) {
-      console.log(`Successfully downloaded version ${result.version}`)
-      console.log(`Firmware saved to: ${result.path}`)
-    } else {
-      console.log('No update needed - already have latest version')
-    }
-  } catch (error) {
-    console.error('Firmware update check failed:', error.message)
-    process.exit(1)
-  }
-})
-
-ipcMain.handle('firmware:getLatestVersion', async (_e) => {
-  try {
-    const updater = new FirmwareDownloader('.')
-    const result = await updater.getLatestVersion()
-
-    return result
-  } catch (error) {
-    console.error('Firmware update check failed:', error.message)
-    process.exit(1)
-  }
-})
-
 ipcMain.handle('dialog:showMessageBox', async (_e, options) => {
   return await dialog.showMessageBox(options)
 })
 
-ipcMain.handle('firmware:getArchive', async (_e) => {
-  const firmwarePath = `${app.getPath('userData')}/firmware`
-
-  // List every firmware on the archive. Files are at archivePath/firmware
-  console.log('Listing firmware archive')
-  console.log(firmwarePath)
-  // Return the list of files
-  const files = await fs.promises.readdir(`${firmwarePath}`)
-
-  // Get the created at date for each file and send it back
-  const filesWithDates = await Promise.all(
-    files.filter((file) => file.endsWith('.bin')).map(async (file) => {
-      const stats = await fs.promises.stat(`${firmwarePath}/${file}`)
-      return { file, created: stats.birthtime }
-    })
-  )
-
-  // Only return files with .bin extension
-  console.log(filesWithDates)
-  return filesWithDates
-})
-
-
-ipcMain.handle(
-  'firmware:flash',
-  async (event, filePath: string, progressCallback: (progress: number) => void) => {
-    console.log("Flashing firmware")
-    try {
-      const firmwareData = fs.readFileSync(`${app.getPath('userData')}/firmware/${filePath}`);
-
-      await radio.setBaudRate(115200);
-      await radio.connect()
-      await radio.flashFirmware(firmwareData, (progress: number) => {
-        event.sender.send('firmware:progress', progress);
-      });
-      await radio.close();
-
-      return true;
-    } catch (error) {
-      throw new Error(`Firmware flash failed: ${error.message}`);
-    }
-  }
-);
+setupSerialHandlers(serialConnection, radio)
+setupRadioHandlers(radio)
+setupFirmwareHandlers(radio)
+setupFileHandlers()
