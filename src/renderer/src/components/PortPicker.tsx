@@ -81,7 +81,7 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
       <div className="flex flex-row gap-4 p-4">
         <Select onChange={onChange} className="w-28">
           <option value="">None</option>
-          {ports.map((port) => (
+          {ports && ports.length > 0 && ports.map((port) => (
             <option key={port.path} value={port.path}>
               {port.path} ({port.manufacturer || 'Unknown'})
             </option>
