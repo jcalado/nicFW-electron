@@ -12,6 +12,7 @@ export interface IApi {
   flashFirmware: (filePath) => Promise<void>
   getLatestFirmware: () => Promise<void>
   getFirmwareArchive: () => Promise<void>
+  onFirmwareProgress: (callback: (progress: number) => void) => void
 }
 
 declare global {
