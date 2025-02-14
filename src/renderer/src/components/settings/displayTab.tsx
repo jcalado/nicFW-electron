@@ -35,7 +35,7 @@ export const DisplayTab = ({ settings }) => (
       <Input type="number" value={settings?.dimmer} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>lcdInverted</InfoLabel>
+      <InfoLabel info={<></>}>Inverted LCD</InfoLabel>
       <Switch checked={settings?.lcdInverted} />
     </div>
     <div className="flex flex-col gap-4">
