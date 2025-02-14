@@ -70,7 +70,7 @@ function App(): JSX.Element {
           value={'port-picker'}
           icon={<CheckmarkCircleFilled color={statusColor} />}
         >
-          Connection {isConnected ? selectedPort : ''}
+          Connection
         </Tab>
         <Tab key="channel-list" value={'channel-list'} icon={<ChannelFilled />}>
           Channels {channels && channels.length > 0 ? `(${channels.length})` : ''}
@@ -94,6 +94,7 @@ function App(): JSX.Element {
             onPortSelect={handlePortSelect}
             onConnected={handleConnected}
             isConnected={isConnected}
+            port={selectedPort}
           />
         )}
         {selectedTab === 'channel-list' && (
