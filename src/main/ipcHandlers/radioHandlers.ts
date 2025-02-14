@@ -3,6 +3,7 @@ import RadioCommunicator from '../../radio/radio-communicator'
 import { readChannelMemories, encodeChannelBlock } from '../../radio/channel-memories'
 import { readGroupLabels, writeGroupLabel } from '../../radio/group-labels.js'
 import { readBandPlan } from '../../radio/band-plan.js'
+import { readSettings } from '../../radio/settings.js'
 
 export function setupRadioHandlers(radio: RadioCommunicator): void {
   // Handler for writing channels to the radio
@@ -40,16 +41,16 @@ export function setupRadioHandlers(radio: RadioCommunicator): void {
     }
   })
 
-  // ipcMain.handle('radio:readChannels', async (_e) => {
-  //   try {
-  //     await radio.initialize()
-  //     const channels = await readChannelMemories(radio)
-  //     console.log(channels)
-  //     return channels
-  //   } catch (error) {
-  //     console.error('Error connecting to serial port:', error)
-  //   }
-  // })
+  ipcMain.handle('radio:readSettings', async (_e) => {
+    try {
+      await radio.connect()
+      await radio.initialize()
+      const settings = await readSettings(radio)
+      return settings
+    } catch (error) {
+      console.error('Error connecting to serial port:', error)
+    }
+  })
 
   ipcMain.handle('radio:readBands', async (_e) => {
     try {
