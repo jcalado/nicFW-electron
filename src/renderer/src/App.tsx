@@ -3,11 +3,13 @@ import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 
 import { useState } from 'react'
-import { ChannelFilled, ChannelRegular, CheckmarkCircleFilled, DeveloperBoardLightningFilled, GroupListFilled, GroupListRegular, SlideTransitionFilled } from '@fluentui/react-icons'
+import { ChannelFilled, ChannelRegular, CheckmarkCircleFilled, DeveloperBoardLightningFilled, GroupListFilled, GroupListRegular, SettingsFilled, SlideTransitionFilled } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
 import { Band, Group, Channel } from './types'
 import Firmware from './components/Firmware'
+import Settings from './components/Settings'
+import { RadioSettings } from './types/radioSettings'
 
 function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
@@ -17,6 +19,7 @@ function App(): JSX.Element {
   const [channels, setChannels] = useState<Channel[]>([])
   const [bands, setBands] = useState<Band[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [settings, setSettings] = useState<RadioSettings>()
 
   const handlePortSelect = (port: string): void => {
     console.log(`Selected port: ${port}`)
@@ -52,6 +55,11 @@ function App(): JSX.Element {
     setChannels(channels)
   }
 
+  const handleSettingsReceived = (settings: any): void => {
+    console.log(`Received settings: ${settings}`)
+    setSettings(settings)
+  }
+
   const statusColor = isConnected ? 'green' : 'red'
 
   return (
@@ -72,6 +80,9 @@ function App(): JSX.Element {
         </Tab>
         <Tab key="bandplan-list" value={'bandplan-list'} icon={<SlideTransitionFilled />}>
           Band Plan
+        </Tab>
+        <Tab key="settings" value={'settings'} icon={<SettingsFilled />}>
+          Settings
         </Tab>
         <Tab key="firmware" value={'firmware'} icon={<DeveloperBoardLightningFilled />}>
           Firmware
@@ -104,6 +115,13 @@ function App(): JSX.Element {
             bands={bands}
             isConnected={isConnected}
             onBandsReceived={handleBandsReceived}
+          />
+        )}
+        {selectedTab === 'settings' && (
+          <Settings
+            isConnected={isConnected}
+            settings={settings}
+            onSettingsRead={handleSettingsReceived}
           />
         )}
         {selectedTab === 'firmware' && <Firmware isConnected={isConnected} />}
