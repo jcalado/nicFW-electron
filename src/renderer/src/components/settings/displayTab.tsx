@@ -1,4 +1,5 @@
-import { InfoLabel, Input, Switch, tokens } from '@fluentui/react-components'
+import { Dropdown, InfoLabel, Input, Option, Switch, tokens } from '@fluentui/react-components'
+import { BattOptions, SBarOptions } from '@renderer/types/radioSettings'
 
 export const DisplayTab = ({ settings }) => (
   <div
@@ -19,36 +20,72 @@ export const DisplayTab = ({ settings }) => (
     }}
   >
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>lcdBrightness</InfoLabel>
-      <Input type="number" value={settings?.lcdBrightness} />
+      <InfoLabel info={<></>}>LCD Brightness</InfoLabel>
+      <Input type="number" min={0} max={28} value={settings?.lcdBrightness} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>lcdTimeout</InfoLabel>
-      <Input type="number" value={settings?.lcdTimeout} />
+      <InfoLabel
+        info={
+          <>
+            How long, in seconds, the display remains on after no keypad activity and no signal
+            breaks squelch.
+          </>
+        }
+      >
+        LCD Timeout
+      </InfoLabel>
+      <Input type="number" min={0} max={250} value={settings?.lcdTimeout} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>gamma</InfoLabel>
+      <InfoLabel info={<>Adjus gamma value of the display</>}>LCD Gamma</InfoLabel>
       <Input type="number" value={settings?.gamma} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>dimmer</InfoLabel>
-      <Input type="number" value={settings?.dimmer} />
+      <InfoLabel
+        info={
+          <>
+            How bright the display will be after no input is received by the radio and no signal
+            opens squelch for the given LCD Timeout
+          </>
+        }
+      >
+        Dim Brightness
+      </InfoLabel>
+      <Input type="number" min={0} max={28} value={settings?.dimmer} />
     </div>
     <div className="flex flex-col gap-4">
       <InfoLabel info={<></>}>Inverted LCD</InfoLabel>
       <Switch checked={settings?.lcdInverted} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>sBarStyle</InfoLabel>
-      <Input type="text" value={settings?.sBarStyle} />
+    <InfoLabel info={<>Dual, Single, Hybrid</>}>S-Bar style</InfoLabel>
+      <Dropdown
+        value={Object.keys(SBarOptions).find((key) => SBarOptions[key] === settings?.sBarStyle)}
+        selectedOptions={[settings?.sBarStyle?.toString()]}
+      >
+        {Object.keys(SBarOptions).map((mode, index) => (
+          <Option key={mode} value={index.toString()}>
+            {mode}
+          </Option>
+        ))}
+      </Dropdown>
     </div>
     <div className="flex flex-col gap-4">
       <InfoLabel info={<>Show the S-bar at all times</>}>S-bar always on</InfoLabel>
       <Switch checked={settings?.sBarAlwaysOn} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<></>}>battStyle</InfoLabel>
-      <Input type="text" value={settings?.battStyle} />
+    <InfoLabel info={<>Set the type of battery indicator</>}>Battery indicator</InfoLabel>
+      <Dropdown
+        value={Object.keys(BattOptions).find((key) => BattOptions[key] === settings?.battStyle)}
+        selectedOptions={[settings?.battStyle?.toString()]}
+      >
+        {Object.keys(BattOptions).map((mode, index) => (
+          <Option key={mode} value={index.toString()}>
+            {mode}
+          </Option>
+        ))}
+      </Dropdown>
     </div>
   </div>
 )
