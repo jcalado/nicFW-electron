@@ -259,7 +259,7 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
 
       {channels.length > 0 && <p>{channels.length} channels found.</p>}
 
-      <Table style={{ height: '100px', maxHeight: '100px', overflowY: 'auto' }}>
+      <Table>
         <TableHeader>
           <TableRow>
             {columns.map((column) => (
