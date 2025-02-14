@@ -13,6 +13,7 @@ export interface IApi {
   getLatestFirmware: () => Promise<void>
   getFirmwareArchive: () => Promise<void>
   onFirmwareProgress: (callback: (progress: number) => void) => void
+  readSettings: () => Promise<void>
 }
 
 declare global {
