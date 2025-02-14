@@ -2,6 +2,7 @@ import { SerialPort } from 'serialport'
 import EventEmitter from 'events'
 
 class RadioCommunicator extends EventEmitter {
+  port: SerialPort | null
   constructor(portPath) {
     super()
     this.port = null
@@ -31,6 +32,10 @@ class RadioCommunicator extends EventEmitter {
 
   get currentPortPath() {
     return this.portPath;
+  }
+
+  get portAvailable() {
+    return this.port && this.port.isOpen
   }
 
   async setBaudRate(newBaudRate) {

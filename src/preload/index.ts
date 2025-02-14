@@ -24,7 +24,8 @@ const api = {
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, data: string) => ipcRenderer.invoke('file:write', filePath, data),
 
-  readSettings: () => ipcRenderer.invoke('radio:readSettings')
+  readSettings: () => ipcRenderer.invoke('radio:readSettings'),
+  writeSettings: (settings) => ipcRenderer.invoke('radio:writeSettings', settings)
 }
 
 const dialog = {

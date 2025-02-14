@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import { RadioSettings } from '@renderer/types/radioSettings'
 import { SerialPort } from 'serialport'
 export interface IApi {
   loadPreferences: () => Promise<void>
@@ -14,6 +15,7 @@ export interface IApi {
   getFirmwareArchive: () => Promise<void>
   onFirmwareProgress: (callback: (progress: number) => void) => void
   readSettings: () => Promise<void>
+  writeSettings: (settings: RadioSettings) => Promise<void>
 }
 
 declare global {
