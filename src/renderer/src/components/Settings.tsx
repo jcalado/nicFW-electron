@@ -89,13 +89,7 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
         >
           Write
         </ToolbarButton>
-        <ToolbarDivider />
-        <ToolbarButton onClick={handleFileExport} vertical icon={<SaveRegular />}>
-          Save
-        </ToolbarButton>
-        <ToolbarButton onClick={handleFileImport} vertical icon={<DocumentBulletListRegular />}>
-          Load
-        </ToolbarButton>
+
       </Toolbar>
       <div style={{ display: 'flex', flexDirection: 'row', rowGap: '20px' }}>
         <div
@@ -122,11 +116,13 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
           </TabList>
         </div>
 
+
         {selectedTab === 'tab1' && <DeviceTab settings={settings} />}
         {selectedTab === 'tab2' && <FreqTab settings={settings} />}
         {selectedTab === 'tab3' && <TxTab settings={settings} />}
         {selectedTab === 'tab4' && <ScanTab settings={settings} />}
         {selectedTab === 'tab5' && <DisplayTab settings={settings} />}
+
       </div>
     </div>
   )
