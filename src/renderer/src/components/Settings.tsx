@@ -1,68 +1,37 @@
 import { FC, useState } from 'react'
 import PropTypes from 'prop-types'
-import { useEffect } from 'react'
-import {
-  Dropdown,
-  InfoLabel,
-  Input,
-  makeStyles,
-  Option,
-  Switch,
-  Tab,
-  TabList,
-  Toolbar,
-  ToolbarButton,
-  ToolbarDivider,
-  typographyStyles
-} from '@fluentui/react-components'
-import { tokens } from '@fluentui/react-components'
-import { AfFilters, ASLOptions, PttOptions, RadioSettings } from '@renderer/types/radioSettings'
-import { ArrowDownloadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
+import { Tab, TabList, Toolbar, ToolbarButton } from '@fluentui/react-components'
+import { RadioSettings } from '@renderer/types/radioSettings'
+import { ArrowDownloadRegular, SaveRegular } from '@fluentui/react-icons'
 import { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab } from './settings'
 
 interface SettingsProps {
-  settings: RadioSettings
+  settings: RadioSettings | undefined
   onSettingsRead: (RadioSettings) => void
   isConnected: boolean
 }
 
-const useStyles = makeStyles({
-  header: {
-    ...typographyStyles.title2,
-    flex: 1
-  },
-  subheader: {
-    ...typographyStyles.subtitle1,
-    marginTop: '0px'
-  },
-  archiveHeader: {
-    ...typographyStyles.subtitle2,
-    marginTop: '40px'
-  }
-})
-
 const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) => {
-  const styles = useStyles()
   const [selectedTab, setSelectedTab] = useState('tab2')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSettingsChange = (key: string, value: any) => {
-    console.log("Settings changed", key, value)
+  const handleSettingsChange = (key: string, value: string | number): void => {
+    console.log('Settings changed', key, value)
     // Update the specific setting
     const localSettings = { ...settings }
     localSettings[key] = value
     console.log(localSettings)
     onSettingsRead(localSettings)
-  };
+  }
 
-  const readSettings = async () => {
+  const readSettings = async (): Promise<void> => {
     window.api
       .readSettings()
       .then((settings) => {
         setIsLoading(true)
         onSettingsRead(settings)
       })
-      .catch((error) => {
+      .catch(() => {
         setIsLoading(false)
       })
       .finally(() => {
@@ -70,7 +39,13 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
       })
   }
 
-  const writeSettings = async (settings: RadioSettings) => {
+  /**
+   * Writes the provided settings asynchronously using the window API.
+   *
+   * @param {RadioSettings} settings - The settings to be written.
+   * @returns {Promise<void>} A promise that resolves when the settings are written successfully.
+   */
+  const writeSettings = async (settings: RadioSettings): Promise<void> => {
     window.api
       .writeSettings(settings)
       .then(() => {
@@ -81,13 +56,12 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
       })
   }
 
-  const handleOnTabSelect = (event: React.MouseEvent<HTMLElement>, data: { value: string }) => {
+  const handleOnTabSelect = (
+    event: React.MouseEvent<HTMLElement>,
+    data: { value: string }
+  ): void => {
     setSelectedTab(data.value)
   }
-
-  const handleFileExport = async () => {}
-
-  const handleFileImport = async () => {}
 
   return (
     <div>
@@ -102,7 +76,7 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
           {isLoading ? 'Reading...' : 'Read'}
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => writeSettings(settings)}
+          onClick={() => settings && writeSettings(settings)}
           disabled={!isConnected}
           vertical
           icon={<SaveRegular />}
@@ -135,7 +109,9 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
           </TabList>
         </div>
 
-        {selectedTab === 'tab1' && <DeviceTab settings={settings} onChange={handleSettingsChange} />}
+        {selectedTab === 'tab1' && (
+          <DeviceTab settings={settings} onChange={handleSettingsChange} />
+        )}
         {selectedTab === 'tab2' && <FreqTab settings={settings} onChange={handleSettingsChange} />}
         {selectedTab === 'tab3' && <TxTab settings={settings} />}
         {selectedTab === 'tab4' && <ScanTab settings={settings} onChange={handleSettingsChange} />}

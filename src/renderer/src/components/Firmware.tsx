@@ -87,7 +87,7 @@ function Firmware({ isConnected }) {
     if (result.response === 0) {
       setIsFlashing(true)
       setProgress(0)
-      window.api.onFirmwareProgress((progress) => {
+      window.api.onProgress((progress) => {
         console.log('Progress:', progress)
         setProgress(progress)
       })

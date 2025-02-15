@@ -37,7 +37,7 @@ export function setupFirmwareHandlers(radio: Radio): void {
         await radio.setBaudRate(115200)
         await radio.connect()
         await radio.flashFirmware(firmwareData, (progress: number) => {
-          event.sender.send('firmware:progress', progress)
+          event.sender.send('operation:progress', progress)
         })
         await radio.close()
 

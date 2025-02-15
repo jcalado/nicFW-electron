@@ -3,13 +3,22 @@ import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 
 import { useState } from 'react'
-import { ChannelFilled, ChannelRegular, CheckmarkCircleFilled, DeveloperBoardLightningFilled, GroupListFilled, GroupListRegular, SettingsFilled, SlideTransitionFilled } from '@fluentui/react-icons'
+import {
+  ArchiveFilled,
+  ChannelFilled,
+  CheckmarkCircleFilled,
+  DeveloperBoardLightningFilled,
+  GroupListFilled,
+  SettingsFilled,
+  SlideTransitionFilled
+} from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
 import { Band, Group, Channel } from './types'
 import Firmware from './components/Firmware'
 import Settings from './components/Settings'
 import { RadioSettings } from './types/radioSettings'
+import Codeplug from './components/Codeplug'
 
 function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
@@ -55,7 +64,7 @@ function App(): JSX.Element {
     setChannels(channels)
   }
 
-  const handleSettingsReceived = (settings: any): void => {
+  const handleSettingsReceived = (settings: RadioSettings): void => {
     console.log(`Received settings: ${settings}`)
     setSettings(settings)
   }
@@ -86,6 +95,9 @@ function App(): JSX.Element {
         </Tab>
         <Tab key="firmware" value={'firmware'} icon={<DeveloperBoardLightningFilled />}>
           Firmware
+        </Tab>
+        <Tab key="codeplug" value={'codeplug'} icon={<ArchiveFilled />}>
+          Codeplug
         </Tab>
       </TabList>
       <div className="container">
@@ -126,6 +138,7 @@ function App(): JSX.Element {
           />
         )}
         {selectedTab === 'firmware' && <Firmware isConnected={isConnected} />}
+        {selectedTab === 'codeplug' && <Codeplug isConnected={isConnected} />}
       </div>
     </>
   )

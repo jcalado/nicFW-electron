@@ -11,8 +11,8 @@ const api = {
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
   writeChannel: (channelNumber, channelData) => ipcRenderer.invoke('write-channel', channelNumber, channelData),
   flashFirmware: (firmwarePath) => ipcRenderer.invoke('firmware:flash', firmwarePath),
-  onFirmwareProgress: (callback) => {
-    ipcRenderer.on('firmware:progress', (_event, progress) => callback(progress));
+  onProgress: (callback) => {
+    ipcRenderer.on('operation:progress', (_event, progress) => callback(progress));
   },
   getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
   getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
@@ -25,7 +25,13 @@ const api = {
   writeFile: (filePath: string, data: string) => ipcRenderer.invoke('file:write', filePath, data),
 
   readSettings: () => ipcRenderer.invoke('radio:readSettings'),
-  writeSettings: (settings) => ipcRenderer.invoke('radio:writeSettings', settings)
+  writeSettings: (settings) => ipcRenderer.invoke('radio:writeSettings', settings),
+
+  readCodeplug: () => ipcRenderer.invoke('radio:readCodeplug'),
+  writeCodeplug: (codeplug) => ipcRenderer.invoke('radio:writeCodeplug', codeplug),
+  saveCodeplug: (codeplug) => ipcRenderer.invoke('radio:saveCodeplug', codeplug),
+  loadCodeplug: (codeplug) => ipcRenderer.invoke('radio:loadCodeplug', codeplug)
+
 }
 
 const dialog = {

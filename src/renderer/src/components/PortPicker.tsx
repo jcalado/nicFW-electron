@@ -14,6 +14,7 @@ interface PortPickerProps {
   onPortSelect: (port: string) => void
   onConnected: (connected: string) => void
   isConnected: boolean
+  port: string
 }
 
 const useStyles = makeStyles({
@@ -93,7 +94,7 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
               ports.length > 0 &&
               ports.map((port) => (
                 <option key={port.path} value={port.path}>
-                  {port.path} ({port.manufacturer || 'Unknown'})
+                  {port.path}
                 </option>
               ))}
           </Select>
@@ -121,7 +122,8 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
 PortPicker.propTypes = {
   onPortSelect: PropTypes.func.isRequired,
   onConnected: PropTypes.func.isRequired,
-  isConnected: PropTypes.bool.isRequired
+  isConnected: PropTypes.bool.isRequired,
+  port: PropTypes.string.isRequired
 }
 
 export default PortPicker

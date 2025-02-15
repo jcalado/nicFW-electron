@@ -1,5 +1,6 @@
 import { SerialPort } from 'serialport'
 import EventEmitter from 'events'
+import fs from 'fs'
 
 class RadioCommunicator extends EventEmitter {
   port: SerialPort | null
@@ -31,7 +32,7 @@ class RadioCommunicator extends EventEmitter {
   }
 
   get currentPortPath() {
-    return this.portPath;
+    return this.portPath
   }
 
   get portAvailable() {
@@ -242,7 +243,7 @@ class RadioCommunicator extends EventEmitter {
 
   async flashFirmware(firmware: Buffer, progressCallback?: (progress: number) => void) {
     const originalBaud = this.currentBaudRate
-    const totalBlocks = Math.ceil(firmware.length / 32);
+    const totalBlocks = Math.ceil(firmware.length / 32)
 
     this.port.close()
     this.port = new SerialPort({
@@ -361,6 +362,25 @@ class RadioCommunicator extends EventEmitter {
       await this.setBaudRate(originalBaud)
     }
   }
+
+  // async readCodeplug(progressCallback?: (progress: number) => void) {
+  //   try {
+  //     const codeplug = Buffer.alloc(8192)
+  //     for (let blockNum = 0; blockNum < 256; blockNum++) {
+  //       const blockData = await this.readBlock(blockNum)
+  //       blockData.copy(codeplug, blockNum * 32)
+  //       let percent = (((blockNum + 1) / 256) * 100).toFixed(0)
+  //       progressCallback(percent)
+  //     }
+
+  //     await this.executeCommand(Buffer.from([0x46]), { expectedLength: 1 })
+
+
+  //     return codeplug
+  //   } finally {
+  //     await this.close()
+  //   }
+  // }
 }
 
 export default RadioCommunicator
