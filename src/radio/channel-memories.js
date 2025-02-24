@@ -1,17 +1,17 @@
 import { toGroupString, toToneString, toToneWord, toGroupWord } from '../utils/converters.js'
 
 export function decodeChannelBlock(block) {
-  const rx = block.readUInt32LE(0)
+  const rx = block.readUInt32BE(0)
   if (rx === 0) return null
 
   const rxFreq = rx / 100000
-  const txFreq = block.readUInt32LE(4) / 100000
-  const rxSubToneRaw = block.readUInt16LE(8)
-  const txSubToneRaw = block.readUInt16LE(10)
+  const txFreq = block.readUInt32BE(4) / 100000
+  const rxSubToneRaw = block.readUInt16BE(8)
+  const txSubToneRaw = block.readUInt16BE(10)
   const txPower = block.readUInt8(12)
 
   // Decode groups union (2 bytes)
-  const groupsVal = block.readUInt16LE(13)
+  const groupsVal = block.readUInt16BE(13)
   const groups = {
     g0: groupsVal & 0x0F,
     g1: (groupsVal >> 4) & 0x0F,

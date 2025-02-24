@@ -24,7 +24,7 @@ export function decodeBandPlan(blocks) {
   const fullBlock = Buffer.concat(blocks);
 
   // Validate magic numbers
-  if (fullBlock[0] !== 0x6d || fullBlock[1] !== 0xa4) {
+  if (fullBlock[0] !== 0xa4 || fullBlock[1] !== 0x6d) {
     throw new Error("Invalid band plan magic numbers");
   }
 
@@ -33,8 +33,8 @@ export function decodeBandPlan(blocks) {
   // 20 bands total (1-20) in 7 blocks of 3 bands each (last block has 2 bands + padding)
   for (let r = 1; r <= 20; r++) {
     const addr = 2 + (r - 1) * 10;
-    const startFreq = toDecimalFreq(fullBlock.readUInt32LE(addr));
-    const endFreq = toDecimalFreq(fullBlock.readUInt32LE(addr + 4));
+    const startFreq = toDecimalFreq(fullBlock.readUInt32BE(addr));
+    const endFreq = toDecimalFreq(fullBlock.readUInt32BE(addr + 4));
     const maxPower = fullBlock[addr + 8];
     const flags = fullBlock[addr + 9];
 
