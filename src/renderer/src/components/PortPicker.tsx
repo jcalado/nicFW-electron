@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Button, Select, SelectProps } from '@fluentui/react-components'
+import { Button, ProgressBar, Select, SelectProps } from '@fluentui/react-components'
 import PropTypes from 'prop-types'
 import { useEffect, useState } from 'react'
 import { SerialPort } from 'serialport'
@@ -35,6 +35,8 @@ const useStyles = makeStyles({
 const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnected, port }) => {
   const [ports, setPorts] = useState<SerialPort[]>([])
   const [selectedPort, setSelectedPort] = useState('')
+  const [progress, setProgress] = useState(0)
+
   const styles = useStyles()
 
   useEffect(() => {
@@ -74,6 +76,14 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
     window.api.getSerialPorts().then(setPorts)
   }
 
+    useEffect(() => {
+    // Listen for progress updates from the main process
+    window.api.onProgress((progress) => {
+      console.log('Progress:', progress)
+      setProgress(progress)
+    })
+  }, [isConnected])
+
   return (
     <div
       style={{
@@ -102,18 +112,20 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
             Refresh
           </Button>
         </div>
-        <div className="flex flex-row gap-4">
-          <Button disabled={isConnected} onClick={handleConnect} icon={<PlugConnectedRegular />}>
+        <div style={{display: 'flex', flexDirection: 'row', gap: '4px', justifyContent: 'space-evenly'}}>
+          <Button disabled={isConnected} onClick={handleConnect} icon={<PlugConnectedRegular />} style={{flex: 1}}>
             Connect
           </Button>
           <Button
             disabled={!isConnected}
             onClick={handleDisconnect}
             icon={<PlugDisconnectedRegular />}
+            style={{flex: 1}}
           >
             Disconnect
           </Button>
         </div>
+        <ProgressBar max={100} value={progress} />
       </div>
     </div>
   )

@@ -12,11 +12,29 @@ import {
   ToolbarButton,
   ToolbarDivider
 } from '@fluentui/react-components'
-import { ArrowDownloadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
-import React, { useState } from 'react'
-import {toDecimalFreq} from '../../../utils/converters.js'
+import { ArrowDownloadRegular, ArrowUploadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
+import React, { useState, useEffect } from 'react'
+import { toDecimalFreq } from '../../../utils/converters.js'
 
 function BandPlanList({ bands, isConnected, onBandsReceived }) {
+
+  useEffect(() => {
+    console.log("fetching bandplan")
+    const fetchBandPlan = async () => {
+      try {
+        const bands = await window.api.readBandPlan().then((data) => {
+          onBandsReceived(data)
+        }).catch((error) => {
+          console.error('Error reading bandplan:', error)
+        })
+
+      } catch (error) {
+        console.error('Error fetching bandplan:', error)
+      }
+    }
+
+    fetchBandPlan()
+  }, [])
 
   const columns = [
     { columnKey: 'bandNumber', label: 'Number' },
@@ -26,8 +44,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
     { columnKey: 'txAllowed', label: 'TX allowed' },
     { columnKey: 'wrap', label: 'Wrap' },
     { columnKey: 'modulation', label: 'Modulation' },
-    { columnKey: 'bandwidth', label: 'Bandwidth' },
-
+    { columnKey: 'bandwidth', label: 'Bandwidth' }
   ]
 
   const readBandPlan = () => {
@@ -58,11 +75,11 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
           onClick={() => readBandPlan()}
           disabled={!isConnected}
           vertical
-          icon={<ArrowDownloadRegular />}
+          icon={<ArrowUploadRegular />}
         >
           Write
         </ToolbarButton>
-        <ToolbarDivider/>
+        <ToolbarDivider />
         <ToolbarButton onClick={() => readBandPlan()} vertical icon={<SaveRegular />}>
           Save
         </ToolbarButton>
@@ -70,8 +87,6 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
           Load
         </ToolbarButton>
       </Toolbar>
-
-      {bands && bands.length > 0 && <p>{bands.length} bands entries found.</p>}
 
       <Table>
         <TableHeader>
@@ -94,7 +109,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
                   {band.txAllowed ? <Checkbox checked={true} /> : <Checkbox />}
                 </TableCell>
                 <TableCell key={band.wrap}>
-                {band.wrap ? <Checkbox checked={true} /> : <Checkbox />}
+                  {band.wrap ? <Checkbox checked={true} /> : <Checkbox />}
                 </TableCell>
                 <TableCell key={band.modulation}>{band.modulation}</TableCell>
                 <TableCell key={band.bandwidth}>{band.bandwidth}</TableCell>

@@ -2,7 +2,7 @@ import { SelectTabData, SelectTabEvent, Tab, TabList } from '@fluentui/react-com
 import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArchiveFilled,
   ChannelFilled,
@@ -35,12 +35,27 @@ function App(): JSX.Element {
     setSelectedPort(port)
   }
 
-  const handleConnected = (connected: string): void => {
+  const handleConnected = async (connected: string): Promise<void> => {
     console.log(`Connection status changed to ${connected}`)
     if (connected !== '') {
       setIsConnected(true)
+      await handleFetchCodeplug()
+      processCodeplug()
     } else {
       setIsConnected(false)
+    }
+  }
+
+  const handleFetchCodeplug = async () => {
+
+    try {
+      await window.api.fetchCodeplug()
+      console.log('Codeplug fetched successfully!')
+      // processCodeplug()
+    } catch (error) {
+      console.error('Error fetching codeplug:', error)
+    } finally {
+
     }
   }
 
@@ -55,7 +70,8 @@ function App(): JSX.Element {
   }
 
   const handleGroupsReceived = (groups: Group[]): void => {
-    console.log(`Received groups: ${groups}`)
+    console.log(`Received groups`)
+    console.table(groups)
     setGroups(groups)
   }
 
@@ -71,6 +87,66 @@ function App(): JSX.Element {
 
   const statusColor = isConnected ? 'green' : 'red'
 
+  const processCodeplug = async () => {
+    console.log('Codeplug fetched successfully!')
+
+    const fetchChannels = async () => {
+      try {
+        const channels = await window.api.readChannels()
+        setChannels(channels)
+        setSelectedTab('channel-list')
+      } catch (error) {
+        console.error('Error fetching channels:', error)
+      }
+    }
+
+    const fetchGroups = async () => {
+      try {
+        const groups = await window.api.readGroups()
+        setGroups(groups)
+      } catch (error) {
+        console.error('Error fetching groups:', error)
+      }
+    }
+
+    const fetchBandPlan = async () => {
+      try {
+        const bands = await window.api
+          .readBandPlan()
+          .then((data) => {
+            setBands(data)
+          })
+          .catch((error) => {
+            console.error('Error reading bandplan:', error)
+          })
+      } catch (error) {
+        console.error('Error fetching bandplan:', error)
+      }
+    }
+
+    const fetchSettings = async () => {
+      console.log('Fetching settings')
+      try {
+        await window.api
+          .readSettings()
+          .then((data) => {
+            console.log(data)
+            setSettings(data)
+          })
+          .catch((error) => {
+            console.error('Error reading bandplan:', error)
+          })
+      } catch (error) {
+        console.error('Error fetching bandplan:', error)
+      }
+    }
+
+    await fetchSettings()
+    await fetchBandPlan()
+    await fetchChannels()
+    await fetchGroups()
+  }
+
   return (
     <>
       <TabList onTabSelect={handleTabSelect}>
@@ -85,7 +161,7 @@ function App(): JSX.Element {
           Channels {channels && channels.length > 0 ? `(${channels.length})` : ''}
         </Tab>
         <Tab key="group-list" value={'group-list'} icon={<GroupListFilled />}>
-          Groups {groups && groups.length > 0 ? `(${groups.length})` : ''}
+          Groups
         </Tab>
         <Tab key="bandplan-list" value={'bandplan-list'} icon={<SlideTransitionFilled />}>
           Band Plan

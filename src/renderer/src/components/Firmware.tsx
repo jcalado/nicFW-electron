@@ -13,10 +13,14 @@ import {
 } from '@fluentui/react-components'
 import { ArrowDownloadRegular, UsbPlugRegular } from '@fluentui/react-icons'
 import { makeStyles, typographyStyles } from '@fluentui/react-components'
+import { tokens } from '@fluentui/react-components'
 import { useEffect, useState } from 'react'
 
 const useStyles = makeStyles({
-  header: typographyStyles.title2,
+  header: {
+    ...typographyStyles.title2,
+    marginTop: '20px'
+  },
   subheader: {
     ...typographyStyles.subtitle2,
     marginTop: '0px'
@@ -153,30 +157,44 @@ function Firmware({ isConnected }) {
 
       <h1 className={styles.archiveHeader}>Archive</h1>
 
-      <Table>
-        <TableHeader>
-          {columns.map((column) => (
-            <TableHeaderCell key={column.columnKey}>{column.label}</TableHeaderCell>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {archive &&
-            archive.length > 0 &&
-            archive
-              .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
-              .map((item) => (
-                <TableRow key={item.file}>
-                  <TableCell>{extractVersionFromFile(item.file)}</TableCell>
-                  <TableCell>{new Date(item.created).toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Button size="small" onClick={() => handleFlash(item)}>
-                      Flash
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-        </TableBody>
-      </Table>
+      <div
+        role="tabpanel"
+        aria-labelledby="Conditions"
+        style={{
+          marginRight: '10px',
+          marginTop: '20px',
+          boxShadow: tokens.shadow16,
+          flex: 1,
+          borderRadius: tokens.borderRadiusXLarge,
+          backgroundColor: tokens.colorNeutralCardBackground,
+          padding: tokens.spacingHorizontalXXL
+        }}
+      >
+        <Table>
+          <TableHeader>
+            {columns.map((column) => (
+              <TableHeaderCell key={column.columnKey}>{column.label}</TableHeaderCell>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {archive &&
+              archive.length > 0 &&
+              archive
+                .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
+                .map((item) => (
+                  <TableRow key={item.file}>
+                    <TableCell>{extractVersionFromFile(item.file)}</TableCell>
+                    <TableCell>{new Date(item.created).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Button size="small" onClick={() => handleFlash(item)}>
+                        Flash
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

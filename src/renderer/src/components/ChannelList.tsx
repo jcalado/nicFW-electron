@@ -28,7 +28,7 @@ import {
   SaveRegular,
   ArrowUploadRegular
 } from '@fluentui/react-icons'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Channel } from '../types'
 
 const useStyles = makeStyles({
@@ -40,6 +40,7 @@ const useStyles = makeStyles({
 })
 
 import PropTypes from 'prop-types'
+import { read } from 'fs'
 
 function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: Channel[], isConnected: boolean, onReceiveChannels: (channels: Channel[]) => void }): JSX.Element {
   const [isLoading, setIsLoading] = useState(false)
@@ -244,7 +245,7 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           onClick={() => readChannels()}
           disabled={!isConnected}
           vertical
-          icon={<ArrowDownloadRegular />}
+          icon={<ArrowUploadRegular />}
         >
           Write
         </ToolbarButton>
@@ -256,8 +257,6 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           Load
         </ToolbarButton>
       </Toolbar>
-
-      {channels.length > 0 && <p>{channels.length} channels found.</p>}
 
       <Table>
         <TableHeader>

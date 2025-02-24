@@ -2,7 +2,7 @@ import { FC, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Tab, TabList, Toolbar, ToolbarButton } from '@fluentui/react-components'
 import { RadioSettings } from '@renderer/types/radioSettings'
-import { ArrowDownloadRegular, SaveRegular } from '@fluentui/react-icons'
+import { ArrowDownloadRegular, ArrowUploadRegular, SaveRegular } from '@fluentui/react-icons'
 import { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab } from './settings'
 
 interface SettingsProps {
@@ -79,7 +79,7 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
           onClick={() => settings && writeSettings(settings)}
           disabled={!isConnected}
           vertical
-          icon={<SaveRegular />}
+          icon={<ArrowUploadRegular />}
         >
           Write
         </ToolbarButton>
