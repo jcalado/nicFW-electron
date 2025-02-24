@@ -8,7 +8,10 @@ const api = {
   disconnectPort: (port) => ipcRenderer.invoke('serial:disconnect', port),
   readChannels: (port) => ipcRenderer.invoke('radio:readChannels', port),
   readBandPlan: (port) => ipcRenderer.invoke('radio:readBands', port),
+
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
+  writeGroups: (groups) => ipcRenderer.invoke('radio:writeGroups', groups),
+
   writeChannel: (channelNumber, channelData) => ipcRenderer.invoke('write-channel', channelNumber, channelData),
   flashFirmware: (firmwarePath) => ipcRenderer.invoke('firmware:flash', firmwarePath),
   onProgress: (callback) => {
@@ -30,7 +33,9 @@ const api = {
   readCodeplug: () => ipcRenderer.invoke('radio:readCodeplug'),
   writeCodeplug: (codeplug) => ipcRenderer.invoke('radio:writeCodeplug', codeplug),
   saveCodeplug: (codeplug) => ipcRenderer.invoke('radio:saveCodeplug', codeplug),
-  loadCodeplug: (codeplug) => ipcRenderer.invoke('radio:loadCodeplug', codeplug)
+  loadCodeplug: (codeplug) => ipcRenderer.invoke('radio:loadCodeplug', codeplug),
+  fetchCodeplug: (onProgress: (progress: number) => void) =>
+    ipcRenderer.invoke('codeplug:fetchCodeplug', onProgress),
 
 }
 
