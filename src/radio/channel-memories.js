@@ -1,6 +1,6 @@
 import { toGroupString, toToneString, toToneWord, toGroupWord } from '../utils/converters.js'
 
-function decodeChannelBlock(block) {
+export function decodeChannelBlock(block) {
   const rx = block.readUInt32LE(0)
   if (rx === 0) return null
 

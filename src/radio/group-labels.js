@@ -56,6 +56,7 @@ export async function writeGroupLabel(radio, index, name) {
   // Encode the label data (5 chars + null terminator)
   const labelData = Buffer.alloc(6, 0);
   const cleanName = name.trim().slice(0, 5);
+
   labelData.write(cleanName, 0, 5, "ascii");
 
   // Split data across blocks if needed
