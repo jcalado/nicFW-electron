@@ -6,13 +6,13 @@ import icon from '../../resources/icon.png?asset'
 import RadioCommunicator from '../radio/radio-communicator.js'
 import SerialConnection from '../radio/serial-connection.js'
 
-import { FirmwareDownloader } from '../radio/firmware-downloader.js'
-
 import { setupFileHandlers, setupRadioHandlers, setupFirmwareHandlers } from './ipcHandlers'
 import { setupSerialHandlers } from './ipcHandlers/serialHandlers'
+import CodeplugService from './codeplugService'
 
 const radio = new RadioCommunicator()
 const serialConnection = new SerialConnection()
+const codeplugService = new CodeplugService(radio)
 
 function createWindow(): void {
   // Create the browser window.
@@ -88,7 +88,24 @@ ipcMain.handle('dialog:showMessageBox', async (_e, options) => {
   return await dialog.showMessageBox(options)
 })
 
-setupSerialHandlers(serialConnection, radio)
-setupRadioHandlers(radio)
+setupSerialHandlers(serialConnection, radio, codeplugService)
+setupRadioHandlers(radio, codeplugService)
 setupFirmwareHandlers(radio)
 setupFileHandlers()
+
+
+ipcMain.handle('codeplug:updateChannel', async (_event, channelNumber: number, channelData: Channel) => {
+  await codeplugService.updateChannel(channelNumber, channelData);
+});
+
+ipcMain.handle('codeplug:updateGroup', async (_event, groupIndex: number, label: string) => {
+  await codeplugService.updateGroup(groupIndex, label);
+});
+
+// ipcMain.handle('codeplug:updateSettings', async (_event, settings: RadioSettings) => {
+//   await codeplugService.updateSettings(settings);
+// });
+
+// ipcMain.handle('codeplug:updateBandPlan', async (_event, bands: Band[]) => {
+//   await codeplugService.updateBandPlan(bands);
+// });

@@ -1,14 +1,28 @@
 import { dialog, ipcMain } from 'electron'
 import RadioCommunicator from '../../radio/radio-communicator'
-import { readChannelMemories, encodeChannelBlock } from '../../radio/channel-memories'
+import { readChannelMemories, encodeChannelBlock, decodeChannelBlock } from '../../radio/channel-memories'
 import { readGroupLabels, writeGroupLabel } from '../../radio/group-labels.js'
 import { readBandPlan } from '../../radio/band-plan.js'
 import { readSettings, writeSettings } from '../../radio/settings.js'
 import { readCodeplug, writeCodeplug, saveCodeplug } from '../../radio/codeplug.js'
 import fs from 'fs'
+import { Channel, Group } from '../../renderer/src/types'
 
-export function setupRadioHandlers(radio: RadioCommunicator): void {
-  // Handler for writing channels to the radio
+export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): void {
+
+
+  ipcMain.handle('codeplug:fetchCodeplug', async (event, onProgress) => {
+    try {
+      await codeplugService.fetchCodeplug((progress: number) => {
+        event.sender.send('operation:progress', progress); // Send progress updates to the renderer
+      });
+      event.sender.send('operation:progress', 120)
+    } catch (error) {
+      console.error('Error fetching codeplug:', error);
+      throw error;
+    }
+  });
+
   ipcMain.handle('radio:writeChannels', async (_event, channels: Channel[]) => {
     try {
       await radio.connect()
@@ -30,17 +44,8 @@ export function setupRadioHandlers(radio: RadioCommunicator): void {
 
   // Handler for reading channels from the radio
   ipcMain.handle('radio:readChannels', async () => {
-    try {
-      await radio.connect()
-      await radio.initialize()
-      const channels = await readChannelMemories(radio)
-      return channels
-    } catch (error) {
-      console.error('Error reading channels:', error)
-      throw error
-    } finally {
-      await radio.close()
-    }
+    const channels = await codeplugService.readChannels();
+    return channels
   })
 
   ipcMain.handle('radio:readSettings', async (_e) => {
@@ -78,26 +83,29 @@ export function setupRadioHandlers(radio: RadioCommunicator): void {
   })
 
   ipcMain.handle('radio:readBands', async (_e) => {
-    try {
-      await radio.connect()
-      await radio.initialize()
-      const bandplan = await readBandPlan(radio)
-      console.log(bandplan)
-      return bandplan
-    } catch (error) {
-      console.error('Error connecting to serial port:', error)
-    }
+    console.log('Reading band plan...')
+    const bands = await codeplugService.readBandPlan();
+    return bands
   })
 
   ipcMain.handle('radio:readGroups', async (_e) => {
+    const groups = await codeplugService.readGroups();
+    return groups
+  })
+
+  ipcMain.handle('radio:writeGroups', async (_e, groups: Group[]) => {
     try {
       await radio.connect()
       await radio.initialize()
-      const groups = await readGroupLabels(radio)
-      console.log(groups)
-      return groups
+
+      await codeplugService.updateGroups(groups)
+
+      console.log('Groups written successfully!')
     } catch (error) {
-      console.error('Error connecting to serial port:', error)
+      console.error('Error writing groups:', error)
+      throw error
+    } finally {
+      await radio.close()
     }
   })
 
@@ -162,8 +170,8 @@ export function setupRadioHandlers(radio: RadioCommunicator): void {
     try {
       const result = await dialog.showOpenDialog({
         title: 'Load Codeplug',
-        defaultPath: 'codeplug.bin',
-        filters: [{ name: 'Codeplug', extensions: ['bin'] }]
+        defaultPath: 'codeplug.nfw',
+        filters: [{ name: 'Codeplug', extensions: ['nfw'] }]
       })
 
       if (result.canceled) {

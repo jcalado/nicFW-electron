@@ -3,7 +3,7 @@ import fs from 'fs'
 import SerialConnection from '../../radio/serial-connection'
 import RadioCommunicator from '../../radio/radio-communicator'
 
-export function setupSerialHandlers(connection: SerialConnection, radio: RadioCommunicator): void {
+export function setupSerialHandlers(connection: SerialConnection, radio: RadioCommunicator, codeplugService): void {
   ipcMain.handle('serial:list', async () => {
     try {
       const ports = await connection.getSerialPorts()
@@ -19,6 +19,10 @@ export function setupSerialHandlers(connection: SerialConnection, radio: RadioCo
       await radio.setPortPath(path)
       await radio.connect(path)
       console.log(`Connected to radio at port: ${radio.currentPortPath}`)
+
+      await radio.initialize()
+
+      // await codeplugService.fetchCodeplug()
       return radio.currentPortPath
     } catch (error) {
       console.error('Error connecting to serial port:', error)
