@@ -44,7 +44,7 @@ export const FreqTab = ({ settings, onChange }) => {
         />
       </div>
       <div className="flex flex-col gap-4">
-        <InfoLabel info={<>Frequency threshold for the RX filter between VHF and UHF.</>}>
+        <InfoLabel info={<>Default: 280. Frequency threshold for the RX filter between VHF and UHF.</>}>
           RX Split
         </InfoLabel>
         <Input
@@ -54,7 +54,7 @@ export const FreqTab = ({ settings, onChange }) => {
         />
       </div>
       <div className="flex flex-col gap-4">
-        <InfoLabel info={<>Frequency threshold for the RX filter between VHF and UHF.</>}>
+        <InfoLabel info={<>Default: 280. Frequency threshold for the RX filter between VHF and UHF.</>}>
           TX Split
         </InfoLabel>
         <Input

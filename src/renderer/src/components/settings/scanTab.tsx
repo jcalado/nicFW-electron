@@ -34,7 +34,7 @@ export const ScanTab = ({ settings, onChange }) => {
         />
       </div>
       <div className="flex flex-col gap-4">
-        <InfoLabel info={<></>}>Scan Range</InfoLabel>
+        <InfoLabel info={<>How many MHz the radio will scan above the starting frequency set in VFO Mode before it starts over at the starting frequency.</>}>Scan Range</InfoLabel>
         <Input type="number" value={settings?.scanRange} onChange={(ev) => onChange('scanRange', ev.currentTarget.value)}/>
       </div>
       <div className="flex flex-col gap-4">
