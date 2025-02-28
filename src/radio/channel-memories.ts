@@ -1,4 +1,11 @@
-import { toGroupString, toToneString, toToneWord, toGroupWord } from '../utils/converters.js'
+import {
+  toGroupString,
+  toToneString,
+  toToneWord,
+  toGroupWord,
+  toGroupBytes
+} from '../utils/converters.js'
+import { Channel } from '../renderer/src/types/channel.js'
 
 export function decodeChannelBlock(block) {
   const rx = block.readUInt32BE(0)
@@ -13,19 +20,19 @@ export function decodeChannelBlock(block) {
   // Decode groups union (2 bytes)
   const groupsVal = block.readUInt16BE(13)
   const groups = {
-    g0: groupsVal & 0x0F,
-    g1: (groupsVal >> 4) & 0x0F,
-    g2: (groupsVal >> 8) & 0x0F,
-    g3: (groupsVal >> 12) & 0x0F
+    g0: groupsVal & 0x0f,
+    g1: (groupsVal >> 4) & 0x0f,
+    g2: (groupsVal >> 8) & 0x0f,
+    g3: (groupsVal >> 12) & 0x0f
   }
 
   // Read bits (1 byte at offset 15)
   const bitsByte = block.readUInt8(15)
   const bits = {
-    bandwidth: (bitsByte & 0x01) ? 'Wide' : 'Narrow',
+    bandwidth: bitsByte & 0x01 ? 'Wide' : 'Narrow',
     modulation: ['FM', 'NFM', 'AM', 'USB'][(bitsByte >> 1) & 0x03] || 'Unknown',
     position: (bitsByte >> 3) & 0x01,
-    pttID: (bitsByte >> 4) & 0x03,
+    pttID: ['Off', 'BoT', 'EoT', 'Both'][(bitsByte >> 4) & 0x03],
     reversed: Boolean((bitsByte >> 6) & 0x01),
     busyLock: Boolean((bitsByte >> 7) & 0x01)
   }
@@ -69,38 +76,44 @@ export async function readChannelMemories(radio) {
   return channels
 }
 
-export function encodeChannelBlock(channel) {
-  const block = Buffer.alloc(32)
+export function encodeChannelBlock(channel: Channel): Buffer {
+  const block = Buffer.alloc(32) // 33 bytes including checksum
 
   // RX Frequency (4 bytes)
-  block.writeUInt32LE(Math.round(channel.rxFreq * 100000), 0)
+  block.writeUInt32BE(Math.round(channel.rxFreq * 100000), 0)
 
   // TX Frequency (4 bytes)
-  block.writeUInt32LE(Math.round(channel.txFreq * 100000), 4)
+  block.writeUInt32BE(Math.round(channel.txFreq * 100000), 4)
 
   // RX Tone (2 bytes)
-  block.writeUInt16LE(toToneWord(channel.rxTone), 8)
+  block.writeUInt16BE(toToneWord(channel.rxSubTone), 8)
 
   // TX Tone (2 bytes)
-  block.writeUInt16LE(toToneWord(channel.txTone), 10)
+  block.writeUInt16BE(toToneWord(channel.txSubTone), 10)
 
   // TX Power (1 byte)
   block.writeUInt8(channel.txPower, 12)
 
   // Groups (2 bytes)
-  block.writeUInt16LE(toGroupWord(channel.groups), 13)
+  const groupBytes = toGroupBytes(channel.groups)
+  block.writeUInt8(groupBytes.byte1, 13)
+  block.writeUInt8(groupBytes.byte2, 14)
 
-  // Bandwidth + Modulation (1 byte)
-  const bw = channel.bandwidth === 'Wide' ? 0 : 1
-  const mod = ['FM', 'NFM', 'AM', 'USB'].indexOf(channel.modulation)
-  block.writeUInt8((mod << 1) | bw, 15)
+  // Bit Flags (1 byte)
+  const bitsByte =
+    (channel.bits.bandwidth === 'Wide' ? 0 : 1) |
+    ((channel.bits.modulation & 0x03) << 1) |
+    ((channel.bits.position & 0x01) << 3) |
+    ((['Off', 'BoT', 'EoT', 'Both'].indexOf(channel.bits.pttID) & 0x03) << 4) |
+    ((channel.bits.reversed ? 1 : 0) << 6) |
+    ((channel.bits.busyLock ? 1 : 0) << 7)
+  block.writeUInt8(bitsByte, 15)
 
-  // Channel Name (12 bytes)
-  const nameBuf = Buffer.from(channel.name.substring(0, 12), 'ascii')
+  // Channel Name (12 bytes) - Padded with nulls
+  const nameBuf = Buffer.alloc(12, 0)
+  const channelName = channel.name.substring(0, 12)
+  nameBuf.write(channelName, 0, channelName.length, 'ascii')
   nameBuf.copy(block, 20)
-
-  // Calculate checksum
-  block[32] = block.slice(0, 32).reduce((sum, byte) => sum + byte, 0) & 0xff
 
   return block
 }

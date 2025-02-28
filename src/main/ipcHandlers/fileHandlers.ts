@@ -3,10 +3,10 @@ import fs from 'fs'
 
 export function setupFileHandlers(): void {
   // Handler for opening the file dialog
-  ipcMain.handle('dialog:openFile', async () => {
+  ipcMain.handle('dialog:openFile', async (_event, extension: string = 'csv') => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
-      filters: [{ name: 'CSV Files', extensions: ['csv'] }]
+      filters: [{ name: `${extension.toUpperCase()} Files`, extensions: [extension.toLowerCase()] }]
     })
 
     if (!result.canceled && result.filePaths.length > 0) {

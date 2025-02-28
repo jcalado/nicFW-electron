@@ -1,5 +1,4 @@
 import { input, select } from "@inquirer/prompts";
-import { toToneWord, toGroupWord } from "../utils/converters.js";
 
 /**
  * Edits a channel interactively.

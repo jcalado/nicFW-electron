@@ -20,11 +20,23 @@ export interface ChannelGroups {
 
 export interface ChannelBits {
   bandwidth: 'Wide' | 'Narrow'
-  modulation: 'FM' | 'NFM' | 'AM' | 'USB' | 'Unknown'
+  modulation: RxModulation
   position: number
-  pttID: string
+  pttID: 'Off' | 'BoT' | 'EoT' | 'Both'
   reversed: boolean
   busyLock: boolean
+}
+
+enum Bandwidth {
+  Wide,
+  Narrow
+}
+
+enum RxModulation {
+  Auto,
+  FM,
+  AM,
+  USB
 }
 
 export default Channel

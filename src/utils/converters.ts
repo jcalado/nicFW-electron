@@ -1,36 +1,30 @@
+import { ChannelGroups } from "@renderer/types/channel";
+
 export function toDecimalFreq(bkfreq) {
   return (bkfreq >>> 0) / 100000;
 }
 
-export function toGroupString(groupw) {
-  let str = "";
-  groupw &= 0xffff;
-  for (let i = 0; i < 4; i++) {
-    const nibble = (groupw >> (4 * i)) & 0xf;
-    if (nibble > 0 && nibble < 16) {
-      str = String.fromCharCode(64 + nibble) + str;
-    }
-  }
-  return str;
+export function fromGroupBytes(byte1: number, byte2: number): ChannelGroups {
+  return {
+    g0: byte1 & 0x0F,           // Lower 4 bits of first byte
+    g1: (byte1 & 0xF0) >> 4,    // Upper 4 bits of first byte
+    g2: byte2 & 0x0F,           // Lower 4 bits of second byte
+    g3: (byte2 & 0xF0) >> 4     // Upper 4 bits of second byte
+  };
 }
 
-export function toGroupWord(groupStr) {
-  let word = 0;
-  // Convert string to uppercase to match toGroupString behavior
-  groupStr = (groupStr || "").toUpperCase();
+export function toGroupBytes(groups: ChannelGroups): { byte1: number; byte2: number } {
+  // Extract values, ensuring they're within the valid range (0-15)
+  const g0 = Math.min(Math.max(0, groups.g0 || 0), 15) & 0x0F;
+  const g1 = Math.min(Math.max(0, groups.g1 || 0), 15) & 0x0F;
+  const g2 = Math.min(Math.max(0, groups.g2 || 0), 15) & 0x0F;
+  const g3 = Math.min(Math.max(0, groups.g3 || 0), 15) & 0x0F;
 
-  // Process each character (max 4 chars, right to left)
-  for (let i = 0; i < Math.min(groupStr.length, 4); i++) {
-    const char = groupStr[groupStr.length - 1 - i]; // Read right to left
-    const value = char.charCodeAt(0) - 64; // 'A'=1, 'B'=2, etc
+  // Compose the bytes
+  const byte1 = g0 | (g1 << 4);  // g0 in lower bits, g1 in upper bits
+  const byte2 = g2 | (g3 << 4);  // g2 in lower bits, g3 in upper bits
 
-    // Only process valid characters (A-P = 1-16)
-    if (value > 0 && value < 16) {
-      word |= value << (4 * i); // Place nibble in correct position
-    }
-  }
-
-  return word & 0xffff; // Ensure 16-bit value
+  return { byte1, byte2 };
 }
 
 export function toToneString(tonew) {

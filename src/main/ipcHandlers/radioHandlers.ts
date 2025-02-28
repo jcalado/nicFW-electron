@@ -23,29 +23,33 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
     }
   });
 
-  ipcMain.handle('radio:writeChannels', async (_event, channels: Channel[]) => {
-    try {
-      await radio.connect()
-      await radio.initialize()
+  // ipcMain.handle('radio:writeChannels', async (_event, channels: Channel[]) => {
+  //   try {
+  //     await radio.connect()
+  //     await radio.initialize()
 
-      for (const channel of channels) {
-        const blockData = encodeChannelBlock(channel)
-        await radio.writeBlock(channel.channelNumber + 1, blockData) // Channel 1 = Block 2
-      }
+  //     for (const channel of channels) {
+  //       const blockData = encodeChannelBlock(channel)
+  //       await radio.writeBlock(channel.channelNumber + 1, blockData) // Channel 1 = Block 2
+  //     }
 
-      console.log('Channels written successfully!')
-    } catch (error) {
-      console.error('Error writing channels:', error)
-      throw error
-    } finally {
-      await radio.close()
-    }
-  })
+  //     console.log('Channels written successfully!')
+  //   } catch (error) {
+  //     console.error('Error writing channels:', error)
+  //     throw error
+  //   } finally {
+  //     await radio.close()
+  //   }
+  // })
 
   // Handler for reading channels from the radio
   ipcMain.handle('radio:readChannels', async () => {
     const channels = await codeplugService.readChannels();
     return channels
+  })
+
+  ipcMain.handle('radio:writeChannels', async (_e, channels: Channel[]) => {
+    await codeplugService.writeChannels(channels);
   })
 
   ipcMain.handle('radio:readSettings', async (_e) => {

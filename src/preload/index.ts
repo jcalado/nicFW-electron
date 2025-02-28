@@ -1,12 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { write } from 'fs';
 
 // Custom APIs for renderer
 const api = {
   getSerialPorts: () => ipcRenderer.invoke('serial:list'),
   connectPort: (port) => ipcRenderer.invoke('serial:connect', port),
   disconnectPort: (port) => ipcRenderer.invoke('serial:disconnect', port),
+
   readChannels: (port) => ipcRenderer.invoke('radio:readChannels', port),
+  writeChannels: (channels) => ipcRenderer.invoke('radio:writeChannels', channels),
+
+
   readBandPlan: (port) => ipcRenderer.invoke('radio:readBands', port),
 
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
@@ -21,7 +26,7 @@ const api = {
   getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
   getFirmwareArchive: () => ipcRenderer.invoke('firmware:getArchive'),
 
-  openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+  openFileDialog: (extension: string) => ipcRenderer.invoke('dialog:openFile', extension),
   saveFileDialog: () => ipcRenderer.invoke('dialog:saveFile'),
 
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),

@@ -1,7 +1,12 @@
 import { Dropdown, InfoLabel, Input, Option, Switch, tokens } from '@fluentui/react-components'
-import { BattOptions, SBarOptions } from '@renderer/types/radioSettings'
+import { BattOptions, RadioSettings, SBarOptions } from '@renderer/types/radioSettings'
 
-export const DisplayTab = ({ settings }) => (
+interface DisplayTabProps {
+  settings: RadioSettings
+  onChange: (setting: string, value: any) => void
+}
+
+export const DisplayTab = ({ settings, onChange }: DisplayTabProps) => (
   <div
     role="tabpanel"
     aria-labelledby="Conditions"
@@ -34,10 +39,16 @@ export const DisplayTab = ({ settings }) => (
       >
         LCD Timeout
       </InfoLabel>
-      <Input type="number" min={0} max={250} value={settings?.lcdTimeout} />
+      <Input
+        type="number"
+        min={0}
+        max={250}
+        value={settings?.lcdTimeout}
+        onChange={(ev) => onChange('lcdTimeout', ev.currentTarget.value)}
+      />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<>Adjus gamma value of the display</>}>LCD Gamma</InfoLabel>
+      <InfoLabel info={<>Adjust gamma value of the display</>}>LCD Gamma</InfoLabel>
       <Input type="number" value={settings?.gamma} />
     </div>
     <div className="flex flex-col gap-4">
@@ -55,10 +66,13 @@ export const DisplayTab = ({ settings }) => (
     </div>
     <div className="flex flex-col gap-4">
       <InfoLabel info={<></>}>Inverted LCD</InfoLabel>
-      <Switch checked={settings?.lcdInverted} />
+      <Switch
+        checked={settings?.lcdInverted === 1}
+        onChange={(ev) => onChange('lcdInverted', ev.currentTarget.checked ? 1 : 0)}
+      />
     </div>
     <div className="flex flex-col gap-4">
-    <InfoLabel info={<>Dual, Single, Hybrid</>}>S-Bar style</InfoLabel>
+      <InfoLabel info={<>Dual, Single, Hybrid</>}>S-Bar style</InfoLabel>
       <Dropdown
         value={Object.keys(SBarOptions).find((key) => SBarOptions[key] === settings?.sBarStyle)}
         selectedOptions={[settings?.sBarStyle?.toString()]}
@@ -72,10 +86,13 @@ export const DisplayTab = ({ settings }) => (
     </div>
     <div className="flex flex-col gap-4">
       <InfoLabel info={<>Show the S-bar at all times</>}>S-bar always on</InfoLabel>
-      <Switch checked={settings?.sBarAlwaysOn} />
+      <Switch
+        checked={settings?.sBarAlwaysOn === 1}
+        onChange={(ev) => onChange('sBarAlwaysOn', ev.currentTarget.checked ? 1 : 0)}
+      />
     </div>
     <div className="flex flex-col gap-4">
-    <InfoLabel info={<>Set the type of battery indicator</>}>Battery indicator</InfoLabel>
+      <InfoLabel info={<>Set the type of battery indicator</>}>Battery indicator</InfoLabel>
       <Dropdown
         value={Object.keys(BattOptions).find((key) => BattOptions[key] === settings?.battStyle)}
         selectedOptions={[settings?.battStyle?.toString()]}

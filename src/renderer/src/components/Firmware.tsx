@@ -47,17 +47,24 @@ function Firmware({ isConnected }) {
 
   const flashFirmware = async () => {
     console.log('Flashing firmware')
-    // First open a confirmation dialog
+
+    // Check if connected to radio
+    if (!isConnected) {
+      alert('Please connect to the radio first')
+      return
+    }
+
+    // Show file picker dialog for .bin file
+    const filePath = await window.api.openFileDialog('bin')
+    console.log(filePath);
+    // throw new Error('Not implemented')
+    handleFlash(filePath)
   }
 
   useEffect(() => {
     console.log('Fetching latest version')
     window.api.getLatestVersion().then(({ version, releaseType }) => {
-      console.log(version)
-      console.log(releaseType)
-
       setVersion({ version, releaseType })
-
       setIsLoading(false)
     })
   }, [])
@@ -75,7 +82,7 @@ function Firmware({ isConnected }) {
   ]
 
   const handleFlash = async (item) => {
-    setSelectedFirmware(item.file)
+    setSelectedFirmware(item)
     if (!isConnected) {
       alert('Please connect to the radio first')
       return
@@ -86,18 +93,15 @@ function Firmware({ isConnected }) {
       message: `Are you sure you want to flash ${selectedFirmware}?`,
       buttons: ['Yes', 'No']
     })
-    console.log(result.response)
 
     if (result.response === 0) {
       setIsFlashing(true)
       setProgress(0)
       window.api.onProgress((progress) => {
-        console.log('Progress:', progress)
         setProgress(progress)
       })
 
-      const r = await window.api.flashFirmware(selectedFirmware)
-      console.log(r)
+      await window.api.flashFirmware(selectedFirmware)
     }
   }
 
@@ -186,7 +190,7 @@ function Firmware({ isConnected }) {
                     <TableCell>{extractVersionFromFile(item.file)}</TableCell>
                     <TableCell>{new Date(item.created).toLocaleString()}</TableCell>
                     <TableCell>
-                      <Button size="small" onClick={() => handleFlash(item)}>
+                      <Button size="small" onClick={() => handleFlash(item.file)}>
                         Flash
                       </Button>
                     </TableCell>

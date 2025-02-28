@@ -19,6 +19,7 @@ export interface IApi {
   readCodeplug: () => Promise<void>
   writeCodeplug: (codeplug) => Promise<void>
   loadCodeplug: () => Promise<void>
+  openFileDialog: (extension: string) => Promise<void>
 }
 
 declare global {

@@ -5,12 +5,12 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
   // The settings block occupies 128 bytes starting at address 0x1900 (decimal 6400).
   // 128 bytes / 32 bytes per block = 4 blocks: blocks 200, 201, 202, and 203.
   const blockNumbers = [200, 201, 202, 203]
-  const blocks: Buffer[] = [];
+  const blocks: Buffer[] = []
   for (const num of blockNumbers) {
-    const block = await radio.readBlock(num);
-    blocks.push(block);
+    const block = await radio.readBlock(num)
+    blocks.push(block)
   }
-  const buf = Buffer.concat(blocks);
+  const buf = Buffer.concat(blocks)
 
   const settings: radioSettings = {
     magic: buf.readUInt16BE(0x00),
@@ -70,7 +70,7 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
   // Each block is 19 bytes long:
   // - First VFO: starts at 0x20
   // - Second VFO: starts at 0x20 + 19 = 0x33
-  settings.vfoState = [0, 1].map(i => {
+  settings.vfoState = [0, 1].map((i) => {
     const base = 0x20 + i * 19
     const group = buf.readUInt8(base)
     const lastGroup = buf.readUInt8(base + 1)
@@ -85,86 +85,107 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
   return settings
 }
 
-export async function writeSettings(radio: RadioCommunicator, settings: radioSettings): Promise<void> {
+export async function writeSettings(
+  radio: RadioCommunicator,
+  settings: radioSettings
+): Promise<void> {
   // Create a buffer to hold the settings block (128 bytes)
-  const buffer = Buffer.alloc(128);
+  const buffer = Buffer.alloc(128)
 
-  // Write settings to the buffer
-  buffer.writeUInt16LE(settings.magic, 0x00);
-  buffer.writeUInt8(settings.squelch, 0x02);
-  buffer.writeUInt8(settings.dualWatch, 0x03);
-  buffer.writeUInt8(settings.autoFloor, 0x04);
-  buffer.writeUInt8(settings.activeVfo, 0x05);
-  buffer.writeUInt16LE(settings.step, 0x06);
-  buffer.writeUInt16LE(settings.rxSplit, 0x08);
-  buffer.writeUInt16LE(settings.txSplit, 0x0a);
-  buffer.writeUInt8(settings.pttMode, 0x0c);
-  buffer.writeUInt8(settings.txModMeter, 0x0d);
-  buffer.writeUInt8(settings.micGain, 0x0e);
-  buffer.writeUInt8(settings.txDeviation, 0x0f);
-  buffer.writeInt8(settings.xtal671, 0x10);
-  buffer.writeUInt8(settings.battStyle, 0x11);
-  buffer.writeUInt16LE(settings.scanRange, 0x12);
-  buffer.writeUInt16LE(settings.scanPersist, 0x14);
-  buffer.writeUInt8(settings.scanResume, 0x16);
-  buffer.writeUInt8(settings.ultraScan, 0x17);
-  buffer.writeUInt8(settings.toneMonitor, 0x18);
-  buffer.writeUInt8(settings.lcdBrightness, 0x19);
-  buffer.writeUInt8(settings.lcdTimeout, 0x1a);
-  buffer.writeUInt8(settings.breathe, 0x1b);
-  buffer.writeUInt8(settings.dtmfDev, 0x1c);
-  buffer.writeUInt8(settings.gamma, 0x1d);
-  buffer.writeUInt16LE(settings.repeaterTone, 0x1e);
+  // Write settings to the buffer - using BE for V2.5X firmware
+  buffer.writeUInt16BE(settings.magic, 0x00)
+  buffer.writeUInt8(settings.squelch, 0x02)
+  buffer.writeUInt8(settings.dualWatch, 0x03)
+  buffer.writeUInt8(settings.autoFloor, 0x04)
+  buffer.writeUInt8(settings.activeVfo, 0x05)
+  buffer.writeUInt16BE(settings.step, 0x06)
+  buffer.writeUInt16BE(settings.rxSplit, 0x08)
+  buffer.writeUInt16BE(settings.txSplit, 0x0a)
+  buffer.writeUInt8(settings.pttMode, 0x0c)
+  buffer.writeUInt8(settings.txModMeter, 0x0d)
+  buffer.writeUInt8(settings.micGain, 0x0e)
+  buffer.writeUInt8(settings.txDeviation, 0x0f)
+  buffer.writeInt8(settings.xtal671, 0x10)
+  buffer.writeUInt8(settings.battStyle, 0x11)
+  buffer.writeUInt16BE(settings.scanRange, 0x12)
+  buffer.writeUInt16BE(settings.scanPersist, 0x14)
+  buffer.writeUInt8(settings.scanResume, 0x16)
+  buffer.writeUInt8(settings.ultraScan, 0x17)
+  buffer.writeUInt8(settings.toneMonitor, 0x18)
+  buffer.writeUInt8(settings.lcdBrightness, 0x19)
+  buffer.writeUInt8(settings.lcdTimeout, 0x1a)
+  buffer.writeUInt8(settings.breathe, 0x1b)
+  buffer.writeUInt8(settings.dtmfDev, 0x1c)
+  buffer.writeUInt8(settings.gamma, 0x1d)
+  buffer.writeUInt16BE(settings.repeaterTone, 0x1e)
 
   // Write VFO states
   settings.vfoState.forEach((vfo, i) => {
-    const base = 0x20 + i * 19;
-    buffer.writeUInt8(vfo.group, base);
-    buffer.writeUInt8(vfo.lastGroup, base + 1);
+    const base = 0x20 + i * 19
+    buffer.writeUInt8(vfo.group, base)
+    buffer.writeUInt8(vfo.lastGroup, base + 1)
     vfo.groupModeChannels.forEach((channel, j) => {
-      buffer.writeUInt8(channel, base + 2 + j);
-    });
-    buffer.writeUInt8(vfo.mode, base + 18);
-  });
+      buffer.writeUInt8(channel, base + 2 + j)
+    })
+    buffer.writeUInt8(vfo.mode, base + 18)
+  })
 
   // Write remaining settings
-  buffer.writeUInt8(settings.keyLock, 0x46);
-  buffer.writeUInt8(settings.bluetooth, 0x47);
-  buffer.writeUInt8(settings.powerSave, 0x48);
-  buffer.writeUInt8(settings.keyTones, 0x49);
-  buffer.writeUInt8(settings.ste, 0x4a);
-  buffer.writeUInt8(settings.rfGain, 0x4b);
-  buffer.writeUInt8(settings.sBarStyle, 0x4c);
-  buffer.writeUInt8(settings.sqNoiseLev, 0x4d);
-  buffer.writeUInt32LE(settings.lastFmtFreq, 0x4e);
-  buffer.writeUInt8(settings.vox, 0x52);
-  buffer.writeUInt16LE(settings.voxTail, 0x53);
-  buffer.writeUInt8(settings.txTimeout, 0x55);
-  buffer.writeUInt8(settings.dimmer, 0x56);
-  buffer.writeUInt8(settings.dtmfSpeed, 0x57);
-  buffer.writeUInt8(settings.noiseGate, 0x58);
-  buffer.writeUInt8(settings.scanUpdate, 0x59);
-  buffer.writeUInt8(settings.asl, 0x5a);
-  buffer.writeUInt8(settings.disableFmt, 0x5b);
-  buffer.writeUInt16LE(settings.pin, 0x5c);
-  buffer.writeUInt8(settings.pinAction, 0x5e);
-  buffer.writeUInt8(settings.lcdInverted, 0x5f);
-  buffer.writeUInt8(settings.afFilters, 0x60);
-  buffer.writeUInt8(settings.ifFreq, 0x61);
-  buffer.writeUInt8(settings.sBarAlwaysOn, 0x62);
-  // settings.filler.copy(buffer, 0x63);
+  buffer.writeUInt8(settings.keyLock, 0x46)
+  buffer.writeUInt8(settings.bluetooth, 0x47)
+  buffer.writeUInt8(settings.powerSave, 0x48)
+  buffer.writeUInt8(settings.keyTones, 0x49)
+  buffer.writeUInt8(settings.ste, 0x4a)
+  buffer.writeUInt8(settings.rfGain, 0x4b)
+  buffer.writeUInt8(settings.sBarStyle, 0x4c)
+  buffer.writeUInt8(settings.sqNoiseLev, 0x4d)
+  buffer.writeUInt32BE(settings.lastFmtFreq, 0x4e)
+  buffer.writeUInt8(settings.vox, 0x52)
+  buffer.writeUInt16BE(settings.voxTail, 0x53)
+  buffer.writeUInt8(settings.txTimeout, 0x55)
+  buffer.writeUInt8(settings.dimmer, 0x56)
+  buffer.writeUInt8(settings.dtmfSpeed, 0x57)
+  buffer.writeUInt8(settings.noiseGate, 0x58)
+  buffer.writeUInt8(settings.scanUpdate, 0x59)
+  buffer.writeUInt8(settings.asl, 0x5a)
+  buffer.writeUInt8(settings.disableFmt, 0x5b)
+  buffer.writeUInt16BE(settings.pin, 0x5c)
+  buffer.writeUInt8(settings.pinAction, 0x5e)
+  buffer.writeUInt8(settings.lcdInverted, 0x5f)
+  buffer.writeUInt8(settings.afFilters, 0x60)
+  buffer.writeUInt8(settings.ifFreq, 0x61)
+  buffer.writeUInt8(settings.sBarAlwaysOn, 0x62)
+
+  // Add newer fields if they're part of your radioSettings type
+  if ('lockedVfo' in settings) {
+    buffer.writeUInt8(settings.lockedVfo, 0x63)
+  }
+  if ('vfoLockActive' in settings) {
+    buffer.writeUInt8(settings.vfoLockActive, 0x64)
+  }
+  if ('dualWatchDelay' in settings) {
+    buffer.writeUInt8(settings.dualWatchDelay, 0x65)
+  }
+  if ('subToneDeviation' in settings) {
+    buffer.writeUInt8(settings.subToneDeviation, 0x66)
+  }
+
+  // Fill remaining space with zeros or copy from settings.filler
+  if (settings.filler && Buffer.isBuffer(settings.filler)) {
+    settings.filler.copy(buffer, 0x63, 0, Math.min(settings.filler.length, 29))
+  }
 
   // Split the buffer into 32-byte blocks
   const blocks = [
     buffer.subarray(0, 32),
     buffer.subarray(32, 64),
     buffer.subarray(64, 96),
-    buffer.subarray(96, 128),
-  ];
+    buffer.subarray(96, 128)
+  ]
 
   // Write each block to the radio
-  const blockNumbers = [200, 201, 202, 203]; // EEPROM block numbers for settings
+  const blockNumbers = [200, 201, 202, 203] // EEPROM block numbers for settings
   for (let i = 0; i < blocks.length; i++) {
-    await radio.writeBlock(blockNumbers[i], blocks[i]);
+    await radio.writeBlock(blockNumbers[i], blocks[i])
   }
 }

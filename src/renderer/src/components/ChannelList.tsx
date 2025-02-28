@@ -45,6 +45,8 @@ import { read } from 'fs'
 function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: Channel[], isConnected: boolean, onReceiveChannels: (channels: Channel[]) => void }): JSX.Element {
   const [isLoading, setIsLoading] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
+  const [writing, setWriting] = useState(false)
+  const [error, setError] = useState(null)
 
   const columns = [
     { columnKey: 'channelNumber', label: 'Number' },
@@ -73,6 +75,21 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
       })
       .catch((error) => {
         console.error('Error reading channels:', error)
+      })
+  }
+
+  const writeChannels = () => {
+    setWriting(true)
+    window.api
+      .writeChannels(channels)
+      .then(() => {
+        console.log('Channels written successfully!')
+        setWriting(false)
+      })
+      .catch((error) => {
+        console.error('Error writing channels:', error)
+        setWriting(false)
+        setError(error)
       })
   }
 
@@ -122,11 +139,28 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
     const headers = lines[0].split(',')
 
     const groupLetterToNumber = (letter: string): number => {
-      try {
-        return letter.charCodeAt(0) - 64 // 'A' -> 1, 'B' -> 2, etc.
-      } catch (error) {
-        console.log(error)
+
+      switch (letter) {
+        case 'A':
+          return 1
+        case 'B':
+          return 2
+        case 'C':
+          return 3
+        case 'D':
+          return 4
+        case 'E':
+          return 5
+        case 'F':
+          return 6
+        case 'G':
+          return 7
+        case 'H':
+          return 8
+        default:
+          return 0
       }
+
 
     }
 
@@ -150,13 +184,17 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           bandwidth: values[12] === 'Wide' ? 'Wide' : 'Narrow',
           modulation: ['FM', 'NFM', 'AM', 'USB', 'Unknown'].includes(values[13])
             ? (values[13] as 'FM' | 'NFM' | 'AM' | 'USB' | 'Unknown')
-            : 'Unknown',
+            : values[13],
           busyLock: values[14] === 'True',
           reversed: values[15] === 'True',
           position: 0,
-          pttID: values[16]
+          // pttID can be 'Off', 'BoT', 'EoT', 'Both'
+          pttID: ['Off', 'BoT', 'EoT', 'Both'].includes(values[16])
+            ? (values[16] as 'Off' | 'BoT' | 'EoT' | 'Both')
+            : 'Off'
         }
       }
+      console.log(channel.groups)
       return channel
     })
   }
@@ -242,7 +280,7 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           {isLoading ? 'Reading...' : 'Read'}
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => readChannels()}
+          onClick={() => writeChannels()}
           disabled={!isConnected}
           vertical
           icon={<ArrowUploadRegular />}
@@ -385,6 +423,22 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           </form>
         </DialogSurface>
       </Dialog>
+      <Dialog open={writing || error != null}>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>Writing channels</DialogTitle>
+          {error == null && <DialogContent>
+            Please wait while the channel data is written to the radio... Do not disconnect or close the application.
+          </DialogContent>}
+          {error != null && <DialogContent>
+            An error occurred while writing the channel data: {error.message}
+          </DialogContent>}
+          <DialogActions>
+            <Button disabled={writing} onClick={() => {setWriting(false); setError(null)}}>Ok</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
     </div>
   )
 }
@@ -408,7 +462,7 @@ ChannelList.propTypes = {
         bandwidth: PropTypes.oneOf(['Wide', 'Narrow']).isRequired,
         modulation: PropTypes.oneOf(['FM', 'NFM', 'AM', 'USB', 'Unknown']).isRequired,
         position: PropTypes.number.isRequired,
-        pttID: PropTypes.number.isRequired,
+        pttID: PropTypes.oneOf(['Off', 'BoT', 'EoT', 'Both']).isRequired,
         reversed: PropTypes.bool.isRequired,
         busyLock: PropTypes.bool.isRequired
       }).isRequired,

@@ -115,7 +115,7 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
         {selectedTab === 'tab2' && <FreqTab settings={settings} onChange={handleSettingsChange} />}
         {selectedTab === 'tab3' && <TxTab settings={settings} />}
         {selectedTab === 'tab4' && <ScanTab settings={settings} onChange={handleSettingsChange} />}
-        {selectedTab === 'tab5' && <DisplayTab settings={settings} />}
+        {selectedTab === 'tab5' && <DisplayTab settings={settings} onChange={handleSettingsChange}/>}
       </div>
     </div>
   )

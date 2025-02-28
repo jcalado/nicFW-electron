@@ -1,4 +1,4 @@
-import { toDecimalFreq } from "../utils/converters.js";
+import { toDecimalFreq } from "../utils/converters";
 
 const BAND_MODULATION = [
   "Ignore",

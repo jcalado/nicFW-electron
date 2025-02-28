@@ -1,5 +1,5 @@
 import { readCodeplug } from '../radio/codeplug'
-import { decodeChannelBlock } from '../radio/channel-memories'
+import { decodeChannelBlock, encodeChannelBlock } from '../radio/channel-memories'
 import { readGroupLabels } from '../radio/group-labels'
 import { readBandPlan, decodeBandPlan } from '../radio/band-plan'
 import { readSettings } from '../radio/settings'
@@ -55,6 +55,30 @@ class CodeplugService {
       }
     }
     return channels
+  }
+
+  async writeChannels(channels: Channel[]): Promise<void> {
+    if (!this.codeplug) {
+      throw new Error('Codeplug not fetched. Call fetchCodeplug() first.')
+    }
+
+    await this.radio.connect()
+    await this.radio.initialize()
+
+    for (const channel of channels) {
+      console.log('channel:', channel)
+      const blockData = encodeChannelBlock(channel)
+      await this.radio.writeBlock(channel.channelNumber + 1, blockData) // Channel 1 = Block 2
+    }
+
+    // If less than 197 channels were written, clear the remaining channels
+    if (channels.length < 199) {
+      for (let blockNum = channels.length + 1; blockNum <= 199; blockNum++) {
+        await this.radio.writeBlock(blockNum, Buffer.alloc(32))
+      }
+    }
+
+    await this.radio.restart()
   }
 
   /**

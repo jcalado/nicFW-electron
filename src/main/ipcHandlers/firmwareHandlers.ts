@@ -6,9 +6,6 @@ export function setupFirmwareHandlers(radio: Radio): void {
   ipcMain.handle('firmware:getArchive', async (_e) => {
     const firmwarePath = `${app.getPath('userData')}/firmware`
 
-    // List every firmware on the archive. Files are at archivePath/firmware
-    console.log('Listing firmware archive')
-    console.log(firmwarePath)
     // Return the list of files
     const files = await fs.promises.readdir(`${firmwarePath}`)
 
@@ -23,7 +20,6 @@ export function setupFirmwareHandlers(radio: Radio): void {
     )
 
     // Only return files with .bin extension
-    console.log(filesWithDates)
     return filesWithDates
   })
 
@@ -32,7 +28,7 @@ export function setupFirmwareHandlers(radio: Radio): void {
     async (event, filePath: string, progressCallback: (progress: number) => void) => {
       console.log('Flashing firmware')
       try {
-        const firmwareData = fs.readFileSync(`${app.getPath('userData')}/firmware/${filePath}`)
+        const firmwareData = fs.readFileSync(filePath)
 
         await radio.setBaudRate(115200)
         await radio.connect()
