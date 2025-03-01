@@ -1,7 +1,7 @@
-import { TxTab } from './txTab'
-import { DeviceTab } from './deviceTab'
-import { FreqTab } from './freqTab'
-import { ScanTab } from './scanTab'
-import { DisplayTab } from './displayTab'
+import { TxTab } from './TxTab'
+import { DeviceTab } from './DeviceTab'
+import { FreqTab } from './FreqTab'
+import { ScanTab } from './ScanTab'
+import { DisplayTab } from './DisplayTab'
 
 export { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab}
