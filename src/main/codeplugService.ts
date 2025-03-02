@@ -22,7 +22,7 @@ class CodeplugService {
       await this.radio.connect()
       await this.radio.initialize()
       this.codeplug = await readCodeplug(this.radio, (progress: number) => {
-        console.log(`Fetching codeplug: ${progress}%`)
+        // console.log(`Fetching codeplug: ${progress}%`)
         if (onProgress) {
           onProgress(progress); // Notify the caller of progress
         }
@@ -68,13 +68,19 @@ class CodeplugService {
     for (const channel of channels) {
       console.log('channel:', channel)
       const blockData = encodeChannelBlock(channel)
-      await this.radio.writeBlock(channel.channelNumber + 1, blockData) // Channel 1 = Block 2
+
+      await this.radio.writeBlock(channel.channelNumber + 1, blockData)
+
+      blockData.copy(this.codeplug, (channel.channelNumber + 1) * 32, 0, 32)
     }
 
-    // If less than 197 channels were written, clear the remaining channels
     if (channels.length < 199) {
-      for (let blockNum = channels.length + 1; blockNum <= 199; blockNum++) {
-        await this.radio.writeBlock(blockNum, Buffer.alloc(32))
+      const emptyBlock = Buffer.alloc(32)
+      for (let blockNum = channels.length + 2; blockNum <= 199; blockNum++) {
+        await this.radio.writeBlock(blockNum, emptyBlock)
+
+        // IMPORTANT: Also clear these channels in the in-memory codeplug
+        emptyBlock.copy(this.codeplug, blockNum * 32, 0, 32)
       }
     }
 
