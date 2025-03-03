@@ -1,6 +1,7 @@
 import { SelectTabData, SelectTabEvent, Tab, TabList } from '@fluentui/react-components'
 import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
+import ScanPresetList from './components/ScanPresetList'
 
 import { useEffect, useState } from 'react'
 import {
@@ -10,11 +11,12 @@ import {
   DeveloperBoardLightningFilled,
   GroupListFilled,
   SettingsFilled,
-  SlideTransitionFilled
+  SlideTransitionFilled,
+  SoundWaveCircleFilled
 } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
-import { Band, Group, Channel } from './types'
+import { Band, Group, Channel, ScanPreset } from './types'
 import Firmware from './components/Firmware'
 import Settings from './components/Settings'
 import { RadioSettings } from './types/radioSettings'
@@ -29,6 +31,7 @@ function App(): JSX.Element {
   const [bands, setBands] = useState<Band[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [settings, setSettings] = useState<RadioSettings>()
+  const [scanPresets, setScanPresets] = useState<ScanPreset[]>([])
 
   const handlePortSelect = (port: string): void => {
     console.log(`Selected port: ${port}`)
@@ -175,6 +178,7 @@ function App(): JSX.Element {
         <Tab key="codeplug" value={'codeplug'} icon={<ArchiveFilled />}>
           Codeplug
         </Tab>
+        <Tab key="scanPresets" value={'scanPresets'} icon={<SoundWaveCircleFilled/>}>Scan Presets</Tab>
       </TabList>
       <div className="container">
         {selectedTab === 'port-picker' && (
@@ -215,6 +219,13 @@ function App(): JSX.Element {
         )}
         {selectedTab === 'firmware' && <Firmware isConnected={isConnected} />}
         {selectedTab === 'codeplug' && <Codeplug isConnected={isConnected} />}
+        {selectedTab === "scanPresets" && (
+          <ScanPresetList
+            presets={scanPresets}
+            isConnected={isConnected}
+            onPresetsReceived={setScanPresets}
+          />
+        )}
       </div>
     </>
   )
