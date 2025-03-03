@@ -1,10 +1,10 @@
 import { readCodeplug } from '../radio/codeplug'
 import { decodeChannelBlock, encodeChannelBlock } from '../radio/channel-memories'
-import { readGroupLabels } from '../radio/group-labels'
-import { readBandPlan, decodeBandPlan } from '../radio/band-plan'
+import { decodeBandPlan } from '../radio/band-plan'
 import { readSettings } from '../radio/settings'
+import { decodeScanPresetBlock, encodeScanPresetBlock } from '../radio/scan-presets'
 import RadioCommunicator from '../radio/radio-communicator'
-import { Channel, Group, Band, RadioSettings } from '../types'
+import { Channel, Group, Band, RadioSettings, ScanPreset } from '../renderer/src/types'
 
 class CodeplugService {
   private codeplug: Buffer | null = null
@@ -24,7 +24,7 @@ class CodeplugService {
       this.codeplug = await readCodeplug(this.radio, (progress: number) => {
         // console.log(`Fetching codeplug: ${progress}%`)
         if (onProgress) {
-          onProgress(progress); // Notify the caller of progress
+          onProgress(progress) // Notify the caller of progress
         }
       })
     } catch (error) {
@@ -218,6 +218,137 @@ class CodeplugService {
     const bands = decodeBandPlan(bandBlocks)
     console.log('Band plan:', bands)
     return bands
+  }
+
+  /**
+   * Reads and decodes scan preset data from the codeplug.
+   */
+  async readScanPresets(): Promise<ScanPreset[]> {
+    if (!this.codeplug) {
+      throw new Error('Codeplug not fetched. Call fetchCodeplug() first.')
+    }
+
+    const presets: ScanPreset[] = []
+
+    // Scan presets are stored at 0x1B00 (block 432)
+    // Each preset is 20 bytes, and there are 20 presets
+    const startBlock = 216 // 0x1B00
+    const bytesPerPreset = 20
+    const totalPresets = 20
+    const totalBytes = bytesPerPreset * totalPresets // 400 bytes
+
+    // Create a buffer for all presets data
+    const presetsBuffer = Buffer.alloc(totalBytes)
+
+    console.log(
+      `Reading scan presets: ${totalBytes} bytes from ${startBlock} to ${startBlock + Math.ceil(totalBytes / 32) - 1}`
+    )
+
+    // Extract the preset data from the codeplug
+    let presetsOffset = 0
+    for (let blockNum = startBlock; presetsOffset < totalBytes; blockNum++) {
+      const blockData = this.codeplug.subarray(blockNum * 32, (blockNum + 1) * 32)
+      const bytesToCopy = Math.min(32, totalBytes - presetsOffset)
+
+      blockData.copy(presetsBuffer, presetsOffset, 0, bytesToCopy)
+      presetsOffset += bytesToCopy
+
+      console.log(
+        `Read block ${blockNum}: copied ${bytesToCopy} bytes, total ${presetsOffset}/${totalBytes}`
+      )
+    }
+
+    // Now extract each preset from the buffer
+    for (let i = 0; i < totalPresets; i++) {
+      const presetData = presetsBuffer.subarray(i * bytesPerPreset, (i + 1) * bytesPerPreset)
+      console.log(
+        `Preset ${i + 1} raw data:`,
+        Array.from(presetData)
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join(' ')
+      )
+
+      const preset = decodeScanPresetBlock(presetData, i+1)
+      if (preset) {
+        console.log(`Decoded preset ${i + 1}:`, preset)
+        presets.push(preset)
+      } else {
+        console.log(`Preset ${i + 1} was null`)
+      }
+    }
+
+    return presets
+  }
+
+  /**
+   * Writes scan preset data to the radio.
+   */
+  async writeScanPresets(presets: ScanPreset[]): Promise<void> {
+    if (!this.codeplug) {
+      throw new Error('Codeplug not fetched. Call fetchCodeplug() first.')
+    }
+
+    await this.radio.connect()
+    await this.radio.initialize()
+
+    console.log(presets)
+
+    // Create a buffer to hold all scan preset data (20 bytes * 20 presets)
+    const presetsBuffer = Buffer.alloc(20 * 20, 0) // Initialize with zeros
+
+    // Filter out invalid preset numbers and sort by presetNumber
+    const validPresets = presets.filter(p => p.presetNumber >= 0 && p.presetNumber <= 20);
+    const sortedPresets = validPresets.sort((a, b) => a.presetNumber - b.presetNumber)
+
+    console.log(`Writing ${sortedPresets.length} scan presets`)
+
+    // Encode each preset into the buffer at the position specified by presetNumber
+    for (const preset of sortedPresets) {
+      console.log(`Writing scan preset ${preset.presetNumber}:`, preset)
+      const presetData = encodeScanPresetBlock(preset)
+
+      // Use presetNumber (1-based) to determine where to write in the buffer
+      const bufferOffset = preset.presetNumber * 20
+
+      // Verify we're writing within buffer boundaries (this check is redundant now but kept for safety)
+      if (bufferOffset >= 0 && bufferOffset + 20 <= presetsBuffer.length) {
+        presetData.copy(presetsBuffer, bufferOffset, 0, 20)
+        console.log(`Encoded preset ${preset.presetNumber} at offset ${bufferOffset}`)
+      } else {
+        console.warn(`Preset ${preset.presetNumber} is out of range (offset: ${bufferOffset})`)
+      }
+    }
+
+    // Write data in 32-byte blocks to the radio
+    const startBlock = 216 // 0x1B00
+    const totalBytes = presetsBuffer.length
+
+    console.log(
+      `Writing ${totalBytes} bytes of scan preset data to blocks ${startBlock}-${startBlock + Math.ceil(totalBytes / 32) - 1}`
+    )
+
+    // Write in 32-byte blocks
+    for (let offset = 0; offset < totalBytes; offset += 32) {
+      const blockData = Buffer.alloc(32)
+      const bytesToCopy = Math.min(32, totalBytes - offset)
+
+      // Copy data from presets buffer to block
+      presetsBuffer.copy(blockData, 0, offset, offset + bytesToCopy)
+
+      // Calculate block number
+      const blockNum = startBlock + Math.floor(offset / 32)
+
+      console.log(`Writing block ${blockNum}: ${bytesToCopy} bytes from offset ${offset}`)
+
+      // Write the block to the radio
+      await this.radio.writeBlock(blockNum, blockData)
+
+      // Also update the in-memory codeplug
+      blockData.copy(this.codeplug, blockNum * 32, 0, 32)
+    }
+
+    console.log('Scan presets written successfully')
+    await this.radio.restart()
   }
 }
 
