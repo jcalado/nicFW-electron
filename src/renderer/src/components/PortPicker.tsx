@@ -34,13 +34,15 @@ const useStyles = makeStyles({
 
 const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnected, port }) => {
   const [ports, setPorts] = useState<SerialPort[]>([])
+  const [knownPorts, setKnownPorts] = useState<string[]>([])
+  const [newPorts, setNewPorts] = useState<string[]>([])
   const [selectedPort, setSelectedPort] = useState('')
   const [progress, setProgress] = useState(0)
 
   const styles = useStyles()
 
   useEffect(() => {
-    window.api.getSerialPorts().then(setPorts)
+    handleRefresh()
   }, [])
 
   const onChange: SelectProps['onChange'] = (_event, data) => {
@@ -63,7 +65,6 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
     try {
       window.api.disconnectPort(port).then(() => {
         console.log('Disconnected from port:', port)
-
         onConnected('')
       })
     } catch (error) {
@@ -73,10 +74,31 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
   }
 
   const handleRefresh = (): void => {
-    window.api.getSerialPorts().then(setPorts)
+    window.api.getSerialPorts().then((fetchedPorts) => {
+      // Get paths from fetched ports
+      const portPaths = fetchedPorts.map((p) => p.path)
+
+      // Find new ports (those in portPaths but not in knownPorts)
+      const justDiscovered = portPaths.filter((path) => !knownPorts.includes(path))
+
+      // Update state
+      setPorts(fetchedPorts)
+      setNewPorts(justDiscovered)
+      setKnownPorts(portPaths)
+    })
   }
 
-    useEffect(() => {
+  // Sort ports: new ports first, then alphabetically
+  const sortedPorts = [...ports].sort((a, b) => {
+    const aIsNew = newPorts.includes(a.path)
+    const bIsNew = newPorts.includes(b.path)
+
+    if (aIsNew && !bIsNew) return -1
+    if (!aIsNew && bIsNew) return 1
+    return a.path.localeCompare(b.path)
+  })
+
+  useEffect(() => {
     // Listen for progress updates from the main process
     window.api.onProgress((progress) => {
       console.log('Progress:', progress)
@@ -100,27 +122,37 @@ const PortPicker: FC<PortPickerProps> = ({ onPortSelect, onConnected, isConnecte
         <div className="flex flex-row gap-4 p-4">
           <Select onChange={onChange} className="w-28">
             <option value="">None</option>
-            {ports &&
-              ports.length > 0 &&
-              ports.map((port) => (
-                <option key={port.path} value={port.path}>
-                  {port.path}
-                </option>
-              ))}
+            {sortedPorts.map((port) => (
+              <option key={port.path} value={port.path}>
+                {port.path}
+              </option>
+            ))}
           </Select>
           <Button disabled={isConnected} onClick={handleRefresh} icon={<ArrowSyncRegular />}>
             Refresh
           </Button>
         </div>
-        <div style={{display: 'flex', flexDirection: 'row', gap: '4px', justifyContent: 'space-evenly'}}>
-          <Button disabled={isConnected} onClick={handleConnect} icon={<PlugConnectedRegular />} style={{flex: 1}}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '4px',
+            justifyContent: 'space-evenly'
+          }}
+        >
+          <Button
+            disabled={isConnected}
+            onClick={handleConnect}
+            icon={<PlugConnectedRegular />}
+            style={{ flex: 1 }}
+          >
             Connect
           </Button>
           <Button
             disabled={!isConnected}
             onClick={handleDisconnect}
             icon={<PlugDisconnectedRegular />}
-            style={{flex: 1}}
+            style={{ flex: 1 }}
           >
             Disconnect
           </Button>
