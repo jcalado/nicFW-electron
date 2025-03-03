@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Tab, TabList, Toolbar, ToolbarButton } from '@fluentui/react-components'
 import { RadioSettings } from '@renderer/types/radioSettings'
 import { ArrowDownloadRegular, ArrowUploadRegular, SaveRegular } from '@fluentui/react-icons'
-import { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab } from './settings'
+import { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab } from './settings/index'
 
 interface SettingsProps {
   settings: RadioSettings | undefined
