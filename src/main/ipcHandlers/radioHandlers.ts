@@ -208,4 +208,23 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
       throw error
     }
   })
+
+  // Add handlers for DTMF presets
+  ipcMain.handle('radio:readDTMFPresets', async () => {
+    try {
+      return await codeplugService.readDTMFPresets()
+    } catch (error) {
+      console.error('Error reading DTMF presets:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('radio:writeDTMFPresets', async (_, presets) => {
+    try {
+      return await codeplugService.writeDTMFPresets(presets)
+    } catch (error) {
+      console.error('Error writing DTMF presets:', error)
+      throw error
+    }
+  })
 }

@@ -9,6 +9,7 @@ import {
   ChannelFilled,
   CheckmarkCircleFilled,
   DeveloperBoardLightningFilled,
+  DialpadFilled,
   GroupListFilled,
   SettingsFilled,
   SlideTransitionFilled,
@@ -16,11 +17,12 @@ import {
 } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
-import { Band, Group, Channel, ScanPreset } from './types'
+import { Band, Group, Channel, ScanPreset, DTMFPreset } from './types'
 import Firmware from './components/Firmware'
 import Settings from './components/Settings'
 import { RadioSettings } from './types/radioSettings'
 import Codeplug from './components/Codeplug'
+import DTMFPresetList from './components/DTMFPresetList'
 
 function App(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState('port-picker')
@@ -32,6 +34,7 @@ function App(): JSX.Element {
   const [groups, setGroups] = useState<Group[]>([])
   const [settings, setSettings] = useState<RadioSettings>()
   const [scanPresets, setScanPresets] = useState<ScanPreset[]>([])
+  const [dtmfPresets, setDTMFPresets] = useState<DTMFPreset[]>([])
 
   const handlePortSelect = (port: string): void => {
     console.log(`Selected port: ${port}`)
@@ -50,7 +53,6 @@ function App(): JSX.Element {
   }
 
   const handleFetchCodeplug = async () => {
-
     try {
       await window.api.fetchCodeplug()
       console.log('Codeplug fetched successfully!')
@@ -58,7 +60,6 @@ function App(): JSX.Element {
     } catch (error) {
       console.error('Error fetching codeplug:', error)
     } finally {
-
     }
   }
 
@@ -112,6 +113,15 @@ function App(): JSX.Element {
       }
     }
 
+    const fetchScanPresets = async () => {
+      try {
+        const presets = await window.api.readScanPresets()
+        setScanPresets(presets)
+      } catch (error) {
+        console.error('Error fetching scan presets:', error)
+      }
+    }
+
     const fetchBandPlan = async () => {
       try {
         const bands = await window.api
@@ -144,10 +154,21 @@ function App(): JSX.Element {
       }
     }
 
+    const fetchDTMFPresets = async () => {
+      try {
+        const presets = await window.api.readDTMFPresets()
+        setDTMFPresets(presets)
+      } catch (error) {
+        console.error('Error fetching DTMF presets:', error)
+      }
+    }
+
     await fetchSettings()
     await fetchBandPlan()
     await fetchChannels()
     await fetchGroups()
+    await fetchScanPresets()
+    await fetchDTMFPresets()
   }
 
   return (
@@ -169,16 +190,22 @@ function App(): JSX.Element {
         <Tab key="bandplan-list" value={'bandplan-list'} icon={<SlideTransitionFilled />}>
           Band Plan
         </Tab>
-        <Tab key="settings" value={'settings'} icon={<SettingsFilled />}>
-          Settings
-        </Tab>
+
         <Tab key="firmware" value={'firmware'} icon={<DeveloperBoardLightningFilled />}>
           Firmware
+        </Tab>
+        <Tab key="scanPresets" value={'scanPresets'} icon={<SoundWaveCircleFilled />}>
+          Scan Presets
+        </Tab>
+        <Tab key="dtmfPresets" value={'dtmfPresets'} icon={<DialpadFilled />}>
+          DTMF Presets
         </Tab>
         <Tab key="codeplug" value={'codeplug'} icon={<ArchiveFilled />}>
           Codeplug
         </Tab>
-        <Tab key="scanPresets" value={'scanPresets'} icon={<SoundWaveCircleFilled/>}>Scan Presets</Tab>
+        <Tab key="settings" value={'settings'} icon={<SettingsFilled />}>
+          Settings
+        </Tab>
       </TabList>
       <div className="container">
         {selectedTab === 'port-picker' && (
@@ -219,11 +246,18 @@ function App(): JSX.Element {
         )}
         {selectedTab === 'firmware' && <Firmware isConnected={isConnected} />}
         {selectedTab === 'codeplug' && <Codeplug isConnected={isConnected} />}
-        {selectedTab === "scanPresets" && (
+        {selectedTab === 'scanPresets' && (
           <ScanPresetList
             presets={scanPresets}
             isConnected={isConnected}
             onPresetsReceived={setScanPresets}
+          />
+        )}
+        {selectedTab === 'dtmfPresets' && (
+          <DTMFPresetList
+            presets={dtmfPresets}
+            isConnected={isConnected}
+            onPresetsReceived={setDTMFPresets}
           />
         )}
       </div>

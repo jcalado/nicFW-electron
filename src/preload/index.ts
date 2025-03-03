@@ -43,6 +43,10 @@ const api = {
 
   readScanPresets: () => ipcRenderer.invoke('radio:readScanPresets'),
   writeScanPresets: (presets) => ipcRenderer.invoke('radio:writeScanPresets', presets),
+
+  // Add DTMF preset methods
+  readDTMFPresets: () => ipcRenderer.invoke('radio:readDTMFPresets'),
+  writeDTMFPresets: (presets) => ipcRenderer.invoke('radio:writeDTMFPresets', presets),
 }
 
 const dialog = {

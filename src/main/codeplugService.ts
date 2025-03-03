@@ -5,6 +5,7 @@ import { readSettings } from '../radio/settings'
 import { decodeScanPresetBlock, encodeScanPresetBlock } from '../radio/scan-presets'
 import RadioCommunicator from '../radio/radio-communicator'
 import { Channel, Group, Band, RadioSettings, ScanPreset } from '../renderer/src/types'
+import { decodeDTMFPresetBlock, encodeDTMFPresetBlock } from '../radio/dtmf-presets'
 
 class CodeplugService {
   private codeplug: Buffer | null = null
@@ -348,6 +349,144 @@ class CodeplugService {
     }
 
     console.log('Scan presets written successfully')
+    await this.radio.restart()
+  }
+
+  /**
+   * Reads and decodes DTMF preset data from the codeplug.
+   */
+  async readDTMFPresets(): Promise<DTMFPreset[]> {
+    if (!this.codeplug) {
+      throw new Error('Codeplug not fetched. Call fetchCodeplug() first.')
+    }
+
+    const presets: DTMFPreset[] = []
+
+    // DTMF presets are stored at 0x1CF0 (block 231)
+    // Each preset is 12 bytes, and there are 20 presets
+    const startBlock = 231 // 0x1CF0 / 32 = 231.9375, so block 231 offset 30
+    const startOffset = 30 // 0x1CF0 % 32 = 30
+    const bytesPerPreset = 12
+    const totalPresets = 20
+    const totalBytes = bytesPerPreset * totalPresets // 240 bytes
+
+    // Create a buffer for all presets data
+    const presetsBuffer = Buffer.alloc(totalBytes)
+
+    console.log(
+      `Reading DTMF presets: ${totalBytes} bytes from block ${startBlock} offset ${startOffset}`
+    )
+
+    // Extract the preset data from the codeplug
+    let presetsOffset = 0
+    let currentBlock = startBlock
+    let currentBlockOffset = startOffset
+
+    // Read from codeplug into presetsBuffer
+    while (presetsOffset < totalBytes) {
+      const blockData = this.codeplug.subarray(currentBlock * 32, (currentBlock + 1) * 32)
+
+      // Calculate how many bytes to copy from this block
+      const bytesInCurrentBlock = Math.min(32 - currentBlockOffset, totalBytes - presetsOffset)
+
+      // Copy bytes from current block to presets buffer
+      blockData.copy(presetsBuffer, presetsOffset, currentBlockOffset, currentBlockOffset + bytesInCurrentBlock)
+
+      presetsOffset += bytesInCurrentBlock
+      currentBlockOffset = 0 // Reset offset for subsequent blocks
+      currentBlock++ // Move to next block
+
+      console.log(`Read ${bytesInCurrentBlock} bytes from block ${currentBlock-1}, total ${presetsOffset}/${totalBytes}`)
+    }
+
+    // Now extract each preset from the buffer
+    for (let i = 0; i < totalPresets; i++) {
+      const presetData = presetsBuffer.subarray(i * bytesPerPreset, (i + 1) * bytesPerPreset)
+
+      const preset = decodeDTMFPresetBlock(presetData, i)
+      if (preset) {
+        console.log(`Decoded DTMF preset ${i}:`, preset)
+        presets.push(preset)
+      } else {
+        console.log(`DTMF preset ${i} was null`)
+      }
+    }
+
+    return presets
+  }
+
+  /**
+   * Writes DTMF preset data to the radio.
+   */
+  async writeDTMFPresets(presets: DTMFPreset[]): Promise<void> {
+    if (!this.codeplug) {
+      throw new Error('Codeplug not fetched. Call fetchCodeplug() first.')
+    }
+
+    await this.radio.connect()
+    await this.radio.initialize()
+
+    console.log("Writing DTMF presets:", presets)
+
+    // Create a buffer to hold all DTMF preset data (12 bytes * 20 presets)
+    const presetsBuffer = Buffer.alloc(12 * 20, 0) // Initialize with zeros
+
+    // Filter out invalid preset numbers and sort by presetNumber
+    const validPresets = presets.filter(p => p.presetNumber >= 0 && p.presetNumber < 20)
+    const sortedPresets = validPresets.sort((a, b) => a.presetNumber - b.presetNumber)
+
+    console.log(`Writing ${sortedPresets.length} DTMF presets`)
+
+    // Encode each preset into the buffer at the position specified by presetNumber
+    for (const preset of sortedPresets) {
+      console.log(`Writing DTMF preset ${preset.presetNumber}:`, preset)
+      const presetData = encodeDTMFPresetBlock(preset)
+
+      // Use presetNumber (0-based) to determine where to write in the buffer
+      const bufferOffset = preset.presetNumber * 12
+
+      // Verify we're writing within buffer boundaries
+      if (bufferOffset >= 0 && bufferOffset + 12 <= presetsBuffer.length) {
+        presetData.copy(presetsBuffer, bufferOffset, 0, 12)
+        console.log(`Encoded DTMF preset ${preset.presetNumber} at offset ${bufferOffset}`)
+      } else {
+        console.warn(`DTMF preset ${preset.presetNumber} is out of range (offset: ${bufferOffset})`)
+      }
+    }
+
+    // DTMF presets are stored at 0x1CF0 (block 231 offset 30)
+    const startBlock = 231
+    const startOffset = 30
+    const totalBytes = presetsBuffer.length
+
+    // Write the data back to the radio
+    let currentOffset = 0;
+    let currentBlock = startBlock;
+    let currentBlockOffset = startOffset;
+
+    while (currentOffset < totalBytes) {
+      // Read the full block we'll be modifying
+      const fullBlockData = await this.radio.readBlock(currentBlock);
+
+      // Calculate how many bytes to write to this block
+      const bytesToWrite = Math.min(32 - currentBlockOffset, totalBytes - currentOffset);
+
+      // Copy our preset data into the block at the appropriate offset
+      presetsBuffer.copy(fullBlockData, currentBlockOffset, currentOffset, currentOffset + bytesToWrite);
+
+      // Write the modified block back to the radio
+      await this.radio.writeBlock(currentBlock, fullBlockData);
+
+      // Also update the in-memory codeplug
+      fullBlockData.copy(this.codeplug, currentBlock * 32, 0, 32);
+
+      // Update offsets and block number
+      currentOffset += bytesToWrite;
+      currentBlockOffset = 0; // Reset offset for subsequent blocks
+      currentBlock++;
+    }
+
+    console.log('DTMF presets written successfully')
     await this.radio.restart()
   }
 }
