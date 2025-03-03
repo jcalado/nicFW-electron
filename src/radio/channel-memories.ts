@@ -1,13 +1,8 @@
-import {
-  toGroupString,
-  toToneString,
-  toToneWord,
-  toGroupWord,
-  toGroupBytes
-} from '../utils/converters.js'
-import { Channel } from '../renderer/src/types/channel.js'
+import { toToneString, toToneWord, toGroupBytes } from '../utils/converters'
+import { compactGroups } from '../utils/groups'
+import { Channel, RxModulation, PttID } from '../renderer/src/types/channel.js'
 
-export function decodeChannelBlock(block) {
+export function decodeChannelBlock(block): Channel | null {
   const rx = block.readUInt32BE(0)
   if (rx === 0) return null
 
@@ -29,10 +24,10 @@ export function decodeChannelBlock(block) {
   // Read bits (1 byte at offset 15)
   const bitsByte = block.readUInt8(15)
   const bits = {
-    bandwidth: bitsByte & 0x01 ? 'Wide' : 'Narrow',
-    modulation: ['FM', 'NFM', 'AM', 'USB'][(bitsByte >> 1) & 0x03] || 'Unknown',
+    bandwidth: (bitsByte & 0x01 ? 'Narrow' : 'Wide') as 'Narrow' | 'Wide',
+    modulation: (RxModulation[(bitsByte >> 1) & 0x03] || RxModulation.Auto) as RxModulation,
     position: (bitsByte >> 3) & 0x01,
-    pttID: ['Off', 'BoT', 'EoT', 'Both'][(bitsByte >> 4) & 0x03],
+    pttID: (PttID[(bitsByte >> 4) & 0x03] || PttID.Off) as PttID,
     reversed: Boolean((bitsByte >> 6) & 0x01),
     busyLock: Boolean((bitsByte >> 7) & 0x01)
   }
@@ -55,29 +50,31 @@ export function decodeChannelBlock(block) {
   }
 }
 
-export async function readChannelMemories(radio) {
-  const channels = []
+// export async function readChannelMemories(radio): Promise<Channel[]> {
+//   const channels: Channel[] = []
 
-  for (let blockNum = 2; blockNum <= 197; blockNum++) {
-    try {
-      const block = await radio.readBlock(blockNum)
-      const channel = decodeChannelBlock(block)
-      if (channel) {
-        channels.push({
-          channelNumber: blockNum - 1,
-          ...channel
-        })
-      }
-    } catch (error) {
-      console.error(`Error reading channel ${blockNum - 1}:`, error.message)
-    }
-  }
+//   for (let blockNum = 2; blockNum <= 197; blockNum++) {
+//     try {
+//       const block = await radio.readBlock(blockNum)
+//       const channel = decodeChannelBlock(block)
+//       if (channel) {
+//         channels.push({
+//           channelNumber: blockNum - 1,
+//           ...channel
+//         })
+//       }
+//     } catch (error) {
+//       console.error(`Error reading channel ${blockNum - 1}:`, error.message)
+//     }
+//   }
 
-  return channels
-}
+//   return channels
+// }
 
 export function encodeChannelBlock(channel: Channel): Buffer {
   const block = Buffer.alloc(32) // 33 bytes including checksum
+
+  const compactedGroups = compactGroups(channel.groups)
 
   // RX Frequency (4 bytes)
   block.writeUInt32BE(Math.round(channel.rxFreq * 100000), 0)
@@ -95,7 +92,7 @@ export function encodeChannelBlock(channel: Channel): Buffer {
   block.writeUInt8(channel.txPower, 12)
 
   // Groups (2 bytes)
-  const groupBytes = toGroupBytes(channel.groups)
+  const groupBytes = toGroupBytes(compactedGroups)
   block.writeUInt8(groupBytes.byte1, 13)
   block.writeUInt8(groupBytes.byte2, 14)
 
@@ -104,7 +101,7 @@ export function encodeChannelBlock(channel: Channel): Buffer {
     (channel.bits.bandwidth === 'Wide' ? 0 : 1) |
     ((channel.bits.modulation & 0x03) << 1) |
     ((channel.bits.position & 0x01) << 3) |
-    ((['Off', 'BoT', 'EoT', 'Both'].indexOf(channel.bits.pttID) & 0x03) << 4) |
+    ((channel.bits.pttID & 0x03) << 4) |
     ((channel.bits.reversed ? 1 : 0) << 6) |
     ((channel.bits.busyLock ? 1 : 0) << 7)
   block.writeUInt8(bitsByte, 15)
