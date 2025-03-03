@@ -1,5 +1,4 @@
 import {
-  Button,
   Checkbox,
   Table,
   TableBody,
@@ -7,16 +6,17 @@ import {
   TableHeader,
   TableHeaderCell,
   TableRow,
-  Title1,
   Toolbar,
   ToolbarButton,
   ToolbarDivider
 } from '@fluentui/react-components'
 import { ArrowDownloadRegular, ArrowUploadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
-import React, { useState, useEffect } from 'react'
-import { toDecimalFreq } from '../../../utils/converters.js'
+import { useEffect, useState } from 'react'
+import { Band } from '../types'
+import EditBandDialog from './EditBandDialog'
 
 function BandPlanList({ bands, isConnected, onBandsReceived }) {
+  const [editingBand, setEditingBand] = useState<Band | null>(null)
 
   useEffect(() => {
     console.log("fetching bandplan")
@@ -48,7 +48,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
   ]
 
   const readBandPlan = () => {
-    const result = window.api
+    window.api
       .readBandPlan()
       .then((data) => {
         console.log(data)
@@ -57,6 +57,29 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
       .catch((error) => {
         console.error('Error reading bandplan:', error)
       })
+  }
+
+  const handleEdit = (band) => {
+    console.log('Editing band:', band)
+    setEditingBand(band)
+  }
+
+  const handleSave = async () => {
+    if (editingBand) {
+      const updatedBands = bands.map((band) =>
+        band.bandNumber === editingBand.bandNumber ? editingBand : band
+      )
+      onBandsReceived(updatedBands)
+      setEditingBand(null)
+    }
+  }
+
+  const handleCancel = () => {
+    setEditingBand(null)
+  }
+
+  const handleBandChange = (band) => {
+    setEditingBand(band)
   }
 
   return (
@@ -100,7 +123,7 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
           {bands &&
             bands.length > 0 &&
             bands.map((band) => (
-              <TableRow key={band.bandNumber}>
+              <TableRow key={band.bandNumber} onDoubleClick={() => handleEdit(band)}>
                 <TableCell key={band.bandNumber}>{band.bandNumber}</TableCell>
                 <TableCell key={band.start}>{band.start} MHz</TableCell>
                 <TableCell key={band.end}>{band.end} MHz</TableCell>
@@ -117,6 +140,13 @@ function BandPlanList({ bands, isConnected, onBandsReceived }) {
             ))}
         </TableBody>
       </Table>
+
+      <EditBandDialog
+        band={editingBand}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onBandChange={handleBandChange}
+      />
     </div>
   )
 }
