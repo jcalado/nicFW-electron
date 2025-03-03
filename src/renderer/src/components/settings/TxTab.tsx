@@ -102,7 +102,7 @@ export const TxTab = ({ settings }) => (
       <Input type="number" value={settings?.rfGain} />
     </div>
     <div className="flex flex-col gap-4">
-      <InfoLabel info={<>0 is disabled, 1-15 mic sensitivity.</>}>vox</InfoLabel>
+      <InfoLabel info={<>0 is disabled, 1-15 mic sensitivity.</>}>Vox</InfoLabel>
       <Input type="number" min={0} max={15} value={settings?.vox} />
     </div>
     <div className="flex flex-col gap-4">
