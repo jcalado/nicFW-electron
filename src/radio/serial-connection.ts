@@ -11,7 +11,7 @@ class SerialConnection {
     try {
       const ports = await SerialPort.list()
       return ports
-        .filter((port) => port.path.includes('ttyUSB'))
+        // .filter((port) => port.path.includes('ttyUSB'))
         .map((port) => ({
           path: port.path,
           manufacturer: port.manufacturer,
