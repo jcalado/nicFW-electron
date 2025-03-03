@@ -190,4 +190,22 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
       throw error
     }
   })
+
+  ipcMain.handle('radio:readScanPresets', async () => {
+    try {
+      return await codeplugService.readScanPresets()
+    } catch (error) {
+      console.error('Error reading scan presets:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('radio:writeScanPresets', async (_, presets) => {
+    try {
+      return await codeplugService.writeScanPresets(presets)
+    } catch (error) {
+      console.error('Error writing scan presets:', error)
+      throw error
+    }
+  })
 }
