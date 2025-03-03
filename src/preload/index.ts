@@ -11,7 +11,6 @@ const api = {
   readChannels: (port) => ipcRenderer.invoke('radio:readChannels', port),
   writeChannels: (channels) => ipcRenderer.invoke('radio:writeChannels', channels),
 
-
   readBandPlan: (port) => ipcRenderer.invoke('radio:readBands', port),
 
   readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
@@ -42,6 +41,8 @@ const api = {
   fetchCodeplug: (onProgress: (progress: number) => void) =>
     ipcRenderer.invoke('codeplug:fetchCodeplug', onProgress),
 
+  readScanPresets: () => ipcRenderer.invoke('radio:readScanPresets'),
+  writeScanPresets: (presets) => ipcRenderer.invoke('radio:writeScanPresets', presets),
 }
 
 const dialog = {
