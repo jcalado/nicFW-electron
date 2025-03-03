@@ -1,17 +1,6 @@
 import {
   Button,
-  Checkbox,
-  Combobox,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  Input,
-  Label,
   makeStyles,
-  Option,
   Table,
   TableBody,
   TableCell,
@@ -20,33 +9,70 @@ import {
   TableRow,
   Toolbar,
   ToolbarButton,
-  ToolbarDivider
+  ToolbarDivider,
+  Menu,
+  MenuItem,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  DialogTrigger,
+  InsertBeforeRegular,
+  InsertAfterRegular
 } from '@fluentui/react-components'
 import {
   ArrowDownloadRegular,
   DocumentBulletListRegular,
   SaveRegular,
-  ArrowUploadRegular
+  ArrowUploadRegular,
+  EditRegular,
+  DeleteRegular,
+  AddRegular,
+  ArrowTurnDownRightRegular,
+  ArrowTurnRightRegular
 } from '@fluentui/react-icons'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Channel } from '../types'
+import PropTypes from 'prop-types'
+import EditChannelDialog from './EditChannelDialog'
+import WriteChannelsDialog from './WriteChannelsDialog'
 
 const useStyles = makeStyles({
   content: {
     display: 'flex',
     flexDirection: 'column',
     rowGap: '10px'
+  },
+  tableContainer: {
+    overflow: 'auto',
+    height: 'calc(100vh - 110px)'
+  },
+  stickyHeader: {
+    position: 'sticky',
+    top: 0,
+    backgroundColor: 'var(--colorNeutralBackground1)',
+    zIndex: 1
+  },
+  contextMenu: {
+    position: 'fixed',
+    zIndex: 1000
   }
 })
-
-import PropTypes from 'prop-types'
-import { read } from 'fs'
 
 function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: Channel[], isConnected: boolean, onReceiveChannels: (channels: Channel[]) => void }): JSX.Element {
   const [isLoading, setIsLoading] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState(null)
+  // Context menu state
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number, y: number } | null>(null)
+  const [contextMenuChannel, setContextMenuChannel] = useState<Channel | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const columns = [
     { columnKey: 'channelNumber', label: 'Number' },
@@ -95,19 +121,11 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
 
   const handleFileImport = async () => {
     try {
-      // Open file picker dialog
       const filePath = await window.api.openFileDialog()
-
       if (filePath) {
-        // Read the file contents
         const fileContents = await window.api.readFile(filePath)
-
-        // Parse the CSV data
         const parsedChannels = parseCSV(fileContents)
-
-        // Update the UI with the parsed channels
         onReceiveChannels(parsedChannels)
-
         console.log('Channels imported and written successfully!')
       }
     } catch (error) {
@@ -117,22 +135,18 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
 
   const handleFileExport = async () => {
     try {
-      // Convert channels to CSV
       const csvContent = convertChannelsToCSV(channels)
-
-      // Open save dialog and get the file path
       const filePath = await window.api.saveFileDialog()
-
       if (filePath) {
-        // Write the CSV content to the file
         await window.api.writeFile(filePath, csvContent)
-
         console.log('Channels exported successfully!')
       }
     } catch (error) {
       console.error('Error exporting channels:', error)
     }
   }
+
+  // The parseCSV and convertChannelsToCSV functions remain unchanged
 
   const parseCSV = (csvText: string): Channel[] => {
     const lines = csvText.split('\n')
@@ -221,6 +235,11 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
     ]
 
     const rows = channels.map((channel) => {
+      // Convert group numbers to letters (1=A, 2=B, etc.) or empty if 0
+      const groupToLetter = (groupNum: number): string => {
+        return groupNum === 0 ? '' : String.fromCharCode(64 + groupNum);
+      };
+
       return [
         channel.channelNumber,
         'True', // Active (default to True)
@@ -230,7 +249,10 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
         channel.rxSubTone,
         channel.txSubTone,
         channel.txPower,
-        channel.groups.toString(),
+        groupToLetter(channel.groups.g0), // Slot1
+        groupToLetter(channel.groups.g1), // Slot2
+        groupToLetter(channel.groups.g2), // Slot3
+        groupToLetter(channel.groups.g3), // Slot4
         channel.bits.bandwidth,
         channel.bits.modulation,
         channel.bits.busyLock,
@@ -247,23 +269,142 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
     setEditingChannel(channel)
   }
 
+  const handleDelete = (channel: Channel) => {
+    setContextMenuChannel(channel)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (contextMenuChannel) {
+      const updatedChannels = channels.filter(
+        (channel) => channel.channelNumber !== contextMenuChannel.channelNumber
+      )
+      onReceiveChannels(updatedChannels)
+      setIsDeleteDialogOpen(false)
+      setContextMenuChannel(null)
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, channel: Channel) => {
+    e.preventDefault()
+    setContextMenuPosition({ x: e.clientX, y: e.clientY })
+    setContextMenuChannel(channel)
+  }
+
+  const closeContextMenu = () => {
+    setContextMenuPosition(null)
+    setContextMenuChannel(null)
+  }
+
   const handleSave = async () => {
     if (editingChannel) {
-      try {
-        await window.api.writeChannel(editingChannel.channelNumber, editingChannel)
-        setEditingChannel(null) // Close modal
-        // Optionally refresh the channel list
-        const updatedChannels = await window.api.readChannels()
-        onReceiveChannels(updatedChannels)
-      } catch (error) {
-        console.error('Error saving channel:', error)
-      }
+      const updatedChannels = channels.map((channel) =>
+        channel.channelNumber === editingChannel.channelNumber ? editingChannel : channel
+      )
+      onReceiveChannels(updatedChannels)
+      setEditingChannel(null)
     }
   }
 
   const handleCancel = () => {
-    setEditingChannel(null) // Close modal
+    setEditingChannel(null)
   }
+
+  const handleWritingDialogClose = () => {
+    setWriting(false)
+    setError(null)
+  }
+
+  const createDefaultChannel = (channelNumber: number): Channel => {
+    return {
+      channelNumber,
+      name: `New Channel ${channelNumber}`,
+      rxFreq: 145.000,
+      txFreq: 145.000,
+      rxSubTone: 'Off',
+      txSubTone: 'Off',
+      txPower: 5,
+      groups: {
+        g0: 0,
+        g1: 0,
+        g2: 0,
+        g3: 0
+      },
+      bits: {
+        bandwidth: 'Wide',
+        modulation: 'FM',
+        busyLock: false,
+        reversed: false,
+        position: 0,
+        pttID: 'Off'
+      }
+    };
+  };
+
+  const renumberChannels = (channelsList: Channel[]): Channel[] => {
+    return channelsList
+      .sort((a, b) => a.channelNumber - b.channelNumber)
+      .map((channel, index) => ({
+        ...channel,
+        channelNumber: index + 1
+      }));
+  };
+
+  const handleInsertBefore = (beforeChannel: Channel) => {
+    const newChannel = createDefaultChannel(beforeChannel.channelNumber);
+
+    // Insert the new channel at the current position
+    const updatedChannels = [
+      ...channels.filter(ch => ch.channelNumber < beforeChannel.channelNumber),
+      newChannel,
+      ...channels.filter(ch => ch.channelNumber >= beforeChannel.channelNumber)
+    ];
+
+    // Renumber all channels to ensure proper sequence
+    const renumberedChannels = renumberChannels(updatedChannels);
+
+    // Update the channel list and open the edit dialog
+    onReceiveChannels(renumberedChannels);
+    handleEdit(renumberedChannels.find(ch =>
+      ch.name === newChannel.name && ch.rxFreq === newChannel.rxFreq) || newChannel);
+
+    closeContextMenu();
+  };
+
+  const handleInsertAfter = (afterChannel: Channel) => {
+    const newChannel = createDefaultChannel(afterChannel.channelNumber + 1);
+
+    // Insert the new channel after the selected position
+    const updatedChannels = [
+      ...channels.filter(ch => ch.channelNumber <= afterChannel.channelNumber),
+      newChannel,
+      ...channels.filter(ch => ch.channelNumber > afterChannel.channelNumber)
+    ];
+
+    // Renumber all channels to ensure proper sequence
+    const renumberedChannels = renumberChannels(updatedChannels);
+
+    // Update the channel list and open the edit dialog
+    onReceiveChannels(renumberedChannels);
+    handleEdit(renumberedChannels.find(ch =>
+      ch.name === newChannel.name && ch.rxFreq === newChannel.rxFreq) || newChannel);
+
+    closeContextMenu();
+  };
+
+  const handleAddNewChannel = () => {
+    // Find the highest channel number
+    const highestChannelNumber = channels.length > 0
+      ? Math.max(...channels.map(ch => ch.channelNumber))
+      : 0;
+
+    // Create a new channel with defaults
+    const newChannel = createDefaultChannel(highestChannelNumber + 1);
+
+    // Add to channels list and open edit dialog
+    onReceiveChannels([...channels, newChannel]);
+    handleEdit(newChannel);
+  };
 
   const styles = useStyles()
 
@@ -288,6 +429,9 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
           Write
         </ToolbarButton>
         <ToolbarDivider />
+        <ToolbarButton onClick={handleAddNewChannel} vertical icon={<AddRegular />}>
+          New
+        </ToolbarButton>
         <ToolbarButton onClick={handleFileExport} vertical icon={<SaveRegular />}>
           Save
         </ToolbarButton>
@@ -296,149 +440,131 @@ function ChannelList({ channels, isConnected, onReceiveChannels }: { channels: C
         </ToolbarButton>
       </Toolbar>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((column) => (
-              <TableHeaderCell key={column.columnKey}>{column.label}</TableHeaderCell>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {channels &&
-            channels.length > 0 &&
-            channels.map((channel: Channel) => (
-              <TableRow key={channel.channelNumber} onDoubleClick={() => handleEdit(channel)}>
-                <TableCell key={`${channel.channelNumber}-channel.channelNumber`}>{channel.channelNumber}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.name`}>{channel.name}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.rxFreq`}>{channel.rxFreq}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.txFreq`}>{channel.txFreq}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.rxSubTone`}>{channel.rxSubTone}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.txSubTone`}>{channel.txSubTone}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.groups.g0`}>
-                  {Object.values(channel.groups)
-                  .map((groupNumber) => groupNumber === 0 ? '' : String.fromCharCode(64 + groupNumber))
-                  .join('')}
-                </TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.bits.modulation`}>{channel.bits.modulation}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.bits.bandwidth`}>{channel.bits.bandwidth}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.txPower`}>{channel.txPower}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.bits.busyLock`}>{channel.bits.busyLock ? 'Yes' : 'No'}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.bits.reversed`}>{channel.bits.reversed ? 'Yes' : 'No'}</TableCell>
-                <TableCell key={`${channel.channelNumber}-channel.bits.pttid`}>{channel.bits.pttID}</TableCell>
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
+      <div className={styles.tableContainer}>
+        <Table>
+          <TableHeader>
+            <TableRow className={styles.stickyHeader}>
+              {columns.map((column) => (
+                <TableHeaderCell key={column.columnKey}>{column.label}</TableHeaderCell>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {channels &&
+              channels.length > 0 &&
+              channels.map((channel: Channel) => (
+                <TableRow
+                  key={channel.channelNumber}
+                  onDoubleClick={() => handleEdit(channel)}
+                  onContextMenu={(e) => handleContextMenu(e, channel)}
+                >
+                  <TableCell key={`${channel.channelNumber}-channel.channelNumber`}>{channel.channelNumber}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.name`}>{channel.name}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.rxFreq`}>{channel.rxFreq}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.txFreq`}>{channel.txFreq}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.rxSubTone`}>{channel.rxSubTone}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.txSubTone`}>{channel.txSubTone}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.groups.g0`}>
+                    {Object.values(channel.groups)
+                    .map((groupNumber) => groupNumber === 0 ? '' : String.fromCharCode(64 + groupNumber))
+                    .join('')}
+                  </TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.bits.modulation`}>{channel.bits.modulation}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.bits.bandwidth`}>{channel.bits.bandwidth}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.txPower`}>{channel.txPower}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.bits.busyLock`}>{channel.bits.busyLock ? 'Yes' : 'No'}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.bits.reversed`}>{channel.bits.reversed ? 'Yes' : 'No'}</TableCell>
+                  <TableCell key={`${channel.channelNumber}-channel.bits.pttid`}>{channel.bits.pttID}</TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      </div>
 
-      <Dialog
-        open={editingChannel}
-        onOpenChange={(event, data) => {
-          // it is the users responsibility to react accordingly to the open state change
-          setEditingChannel(null)
-        }}
-      >
+      {/* Context Menu */}
+      {contextMenuPosition && contextMenuChannel && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            left: contextMenuPosition.x,
+            top: contextMenuPosition.y
+          }}
+        >
+          <Menu open={true} onOpenChange={closeContextMenu}>
+            <MenuTrigger disableButtonEnhancement>
+              <div />
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                <MenuItem
+                  icon={<EditRegular />}
+                  onClick={() => {
+                    closeContextMenu();
+                    handleEdit(contextMenuChannel);
+                  }}
+                >
+                  Edit
+                </MenuItem>
+                <MenuItem
+                  icon={<ArrowTurnRightRegular />}
+                  onClick={() => handleInsertBefore(contextMenuChannel)}
+                >
+                  Insert Before
+                </MenuItem>
+                <MenuItem
+                  icon={<ArrowTurnDownRightRegular />}
+                  onClick={() => handleInsertAfter(contextMenuChannel)}
+                >
+                  Insert After
+                </MenuItem>
+                <MenuItem
+                  icon={<DeleteRegular />}
+                  onClick={() => {
+                    closeContextMenu();
+                    handleDelete(contextMenuChannel);
+                  }}
+                >
+                  Delete
+                </MenuItem>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={(_, data) => setIsDeleteDialogOpen(data.open)}>
         <DialogSurface>
-          <form>
-            <DialogBody>
-              <DialogTitle>
-                Edit channel {editingChannel?.channelNumber} - {editingChannel?.name}
-              </DialogTitle>
-              <DialogContent className={styles.content}>
-                <Label>Name</Label>
-                <Input
-                  value={editingChannel?.name || ''}
-                  onChange={(e) => setEditingChannel({ ...editingChannel, name: e.target.value })}
-                />
-
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    gap: '10px',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', rowGap: '10px' }}>
-                    <Label>RX Frequency</Label>
-                    <Input
-                      value={editingChannel?.rxFreq || ''}
-                      onChange={(e) =>
-                        setEditingChannel({ ...editingChannel, rxFreq: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', rowGap: '10px' }}>
-                    {' '}
-                    <Label>TX Frequency</Label>
-                    <Input
-                      value={editingChannel?.txFreq || ''}
-                      onChange={(e) =>
-                        setEditingChannel({ ...editingChannel, txFreq: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    gap: '10px',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', rowGap: '10px' }}>
-                    <Label>RX Tone</Label>
-                    <Input
-                      value={editingChannel?.rxTone || ''}
-                      onChange={(e) =>
-                        setEditingChannel({ ...editingChannel, rxTone: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', rowGap: '10px' }}>
-                    {' '}
-                    <Label>TX Tone</Label>
-                    <Input
-                      value={editingChannel?.txTone || ''}
-                      onChange={(e) =>
-                        setEditingChannel({ ...editingChannel, txTone: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Label>Groups</Label>
-                <Combobox multiselect>
-                  {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((group) => (
-                    <Option key={group}>{group}</Option>
-                  ))}
-                </Combobox>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleSave}>Save</Button>
-                <Button onClick={handleCancel}>Cancel</Button>
-              </DialogActions>
-            </DialogBody>
-          </form>
+          <DialogBody>
+            <DialogTitle>Delete Channel</DialogTitle>
+            <DialogContent>
+              Are you sure you want to delete channel {contextMenuChannel?.channelNumber} ({contextMenuChannel?.name})?
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button appearance="primary" onClick={confirmDelete}>
+                Delete
+              </Button>
+            </DialogActions>
+          </DialogBody>
         </DialogSurface>
       </Dialog>
-      <Dialog open={writing || error != null}>
-      <DialogSurface>
-        <DialogBody>
-          <DialogTitle>Writing channels</DialogTitle>
-          {error == null && <DialogContent>
-            Please wait while the channel data is written to the radio... Do not disconnect or close the application.
-          </DialogContent>}
-          {error != null && <DialogContent>
-            An error occurred while writing the channel data: {error.message}
-          </DialogContent>}
-          <DialogActions>
-            <Button disabled={writing} onClick={() => {setWriting(false); setError(null)}}>Ok</Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
+
+      {/* Use the extracted components */}
+      <EditChannelDialog
+        channel={editingChannel}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onChannelChange={setEditingChannel}
+      />
+
+      <WriteChannelsDialog
+        writing={writing}
+        error={error}
+        onClose={handleWritingDialogClose}
+      />
     </div>
   )
 }
