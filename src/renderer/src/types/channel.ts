@@ -22,7 +22,7 @@ export interface ChannelBits {
   bandwidth: 'Wide' | 'Narrow'
   modulation: RxModulation
   position: number
-  pttID: 'Off' | 'BoT' | 'EoT' | 'Both'
+  pttID: PttID
   reversed: boolean
   busyLock: boolean
 }
@@ -32,11 +32,18 @@ enum Bandwidth {
   Narrow
 }
 
-enum RxModulation {
+export enum RxModulation {
   Auto,
   FM,
   AM,
   USB
+}
+
+export enum PttID {
+  Off,
+  BoT,
+  EoT,
+  Both
 }
 
 export default Channel
