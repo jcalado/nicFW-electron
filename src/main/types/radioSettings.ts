@@ -1,7 +1,7 @@
 type VfoState = {
   group: number
   lastGroup: number
-  groupModeChannels: any[] // Define a more specific type if possible
+  groupModeChannels: number[] // Should be exactly 16 numbers
   mode: number
 }
 
@@ -50,13 +50,13 @@ enum BattOptions {
 }
 
 enum IfOptions {
-  '8.46' = 0,
-  '7.25' = 1,
-  '6.35' = 2,
-  '5.64' = 3,
-  '5.08' = 4,
-  '4.62' = 5,
-  '4.23' = 6
+  '8.46 Hz' = 0,
+  '7.25 Hz' = 1,
+  '6.35 Hz' = 2,
+  '5.64 Hz' = 3,
+  '5.08 Hz' = 4,
+  '4.62 Hz' = 5,
+  '4.23 Hz' = 6
 }
 
 enum KeytoneOptions {
@@ -117,6 +117,10 @@ type RadioSettings = {
   afFilters: AfFilters
   ifFreq: IfOptions
   sBarAlwaysOn: number
+  lockedVfo: number
+  vfoLockActive: number
+  dualWatchDelay: number
+  subToneDeviation: number
   filler: Buffer
 }
 

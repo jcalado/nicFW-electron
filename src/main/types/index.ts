@@ -13,7 +13,8 @@ import {
 } from './radioSettings'
 import { DTMFPreset } from './dtmfPreset'
 import { Channel, ChannelGroups } from './channel'
+import { Modulation, Bandwidth } from './band'
 
 export { ASLOptions, IfOptions, AfFilters, BattOptions, PinActions, PttOptions, SBarOptions }
 
-export type { Band, Group, Channel, ScanPreset, RadioSettings, DTMFPreset, ChannelGroups }
+export type { Band, Group, Channel, ScanPreset, RadioSettings, DTMFPreset, ChannelGroups, Modulation, Bandwidth }

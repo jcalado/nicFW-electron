@@ -1,9 +1,8 @@
-import { dialog, ipcMain } from 'electron'
-import fs from 'fs'
+import { ipcMain } from 'electron'
 import SerialConnection from '../../radio/serial-connection'
 import RadioCommunicator from '../../radio/radio-communicator'
 
-export function setupSerialHandlers(connection: SerialConnection, radio: RadioCommunicator, codeplugService): void {
+export function setupSerialHandlers(connection: SerialConnection, radio: RadioCommunicator): void {
   ipcMain.handle('serial:list', async () => {
     try {
       const ports = await connection.getSerialPorts()
@@ -11,25 +10,26 @@ export function setupSerialHandlers(connection: SerialConnection, radio: RadioCo
       return ports
     } catch (error) {
       console.error('Error getting serial ports:', error)
+      return []
     }
   })
 
   ipcMain.handle('serial:connect', async (_e, path) => {
     try {
       await radio.setPortPath(path)
-      await radio.connect(path)
+      await radio.connect()
       console.log(`Connected to radio at port: ${radio.currentPortPath}`)
 
       await radio.initialize()
 
-      // await codeplugService.fetchCodeplug()
       return radio.currentPortPath
     } catch (error) {
       console.error('Error connecting to serial port:', error)
+      return null
     }
   })
 
-  ipcMain.handle('serial:disconnect', async (_e, path) => {
+  ipcMain.handle('serial:disconnect', async () => {
     try {
       await radio.disconnect()
     } catch (error) {

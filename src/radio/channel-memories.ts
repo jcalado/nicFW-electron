@@ -1,6 +1,6 @@
 import { toToneString, toToneWord, toGroupBytes } from '../utils/converters'
 import { compactGroups } from '../utils/groups'
-import { Channel, RxModulation, PttID } from '../main/types/channel'
+import { Channel, RxModulation, PttID, Bandwidth } from '../main/types/channel'
 
 export function decodeChannelBlock(block): Channel | null {
   const rx = block.readUInt32BE(0)
@@ -24,7 +24,7 @@ export function decodeChannelBlock(block): Channel | null {
   // Read bits (1 byte at offset 15)
   const bitsByte = block.readUInt8(15)
   const bits = {
-    bandwidth: (bitsByte & 0x01 ? 'Narrow' : 'Wide') as 'Narrow' | 'Wide',
+    bandwidth: (bitsByte & 0x01 ? Bandwidth.Narrow : Bandwidth.Wide) as Bandwidth,
     modulation: (RxModulation[(bitsByte >> 1) & 0x03] || RxModulation.Auto) as RxModulation,
     position: (bitsByte >> 3) & 0x01,
     pttID: (PttID[(bitsByte >> 4) & 0x03] || PttID.Off) as PttID,
@@ -39,6 +39,7 @@ export function decodeChannelBlock(block): Channel | null {
   const name = block.subarray(20, 32).toString('ascii').replace(/\x00/g, '')
 
   return {
+    channelNumber: 0,
     rxFreq,
     txFreq,
     rxSubTone: toToneString(rxSubToneRaw),
@@ -99,7 +100,7 @@ export function encodeChannelBlock(channel: Channel): Buffer {
 
   // Bit Flags (1 byte)
   const bitsByte =
-    (channel.bits.bandwidth === 'Wide' ? 0 : 1) |
+    (channel.bits.bandwidth === Bandwidth.Wide ? 0 : 1) |
     ((channel.bits.modulation & 0x03) << 1) |
     ((channel.bits.position & 0x01) << 3) |
     ((channel.bits.pttID & 0x03) << 4) |

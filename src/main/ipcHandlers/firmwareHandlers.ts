@@ -1,9 +1,10 @@
 import { app, ipcMain } from 'electron'
 import { FirmwareDownloader } from '../../radio/firmware-downloader'
 import fs from 'fs'
+import RadioCommunicator from '../../radio/radio-communicator'
 
-export function setupFirmwareHandlers(radio: Radio): void {
-  ipcMain.handle('firmware:getArchive', async (_e) => {
+export function setupFirmwareHandlers(radio: RadioCommunicator): void {
+  ipcMain.handle('firmware:getArchive', async () => {
     const firmwarePath = `${app.getPath('userData')}/firmware`
 
     // Return the list of files
@@ -23,35 +24,34 @@ export function setupFirmwareHandlers(radio: Radio): void {
     return filesWithDates
   })
 
-  ipcMain.handle(
-    'firmware:flash',
-    async (event, filePath: string, progressCallback: (progress: number) => void) => {
-      console.log('Flashing firmware')
-      try {
-        const firmwareData = fs.readFileSync(filePath)
+  ipcMain.handle('firmware:flash', async (event, filePath: string) => {
+    console.log('Flashing firmware')
+    try {
+      const firmwareData = fs.readFileSync(filePath)
 
-        await radio.setBaudRate(115200)
-        await radio.connect()
-        await radio.flashFirmware(firmwareData, (progress: number) => {
-          event.sender.send('operation:progress', progress)
-        })
-        await radio.close()
+      await radio.setBaudRate(115200)
+      await radio.connect()
+      await radio.flashFirmware(firmwareData, (progress: number) => {
+        event.sender.send('operation:progress', progress)
+      })
+      await radio.close()
 
-        return true
-      } catch (error) {
-        throw new Error(`Firmware flash failed: ${error.message}`)
-      }
+      return true
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      throw new Error(`Firmware flash failed: ${errorMessage}`)
     }
-  )
+  })
 
-  ipcMain.handle('firmware:getLatestVersion', async (_e) => {
+  ipcMain.handle('firmware:getLatestVersion', async () => {
     try {
       const updater = new FirmwareDownloader('.')
       const result = await updater.getLatestVersion()
 
       return result
-    } catch (error) {
-      console.error('Firmware update check failed:', error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Firmware update check failed:', errorMessage)
       process.exit(1)
     }
   })
@@ -67,8 +67,9 @@ export function setupFirmwareHandlers(radio: Radio): void {
       } else {
         console.log('No update needed - already have latest version')
       }
-    } catch (error) {
-      console.error('Firmware update check failed:', error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Firmware update check failed:', errorMessage)
       process.exit(1)
     }
   })

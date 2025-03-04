@@ -1,10 +1,10 @@
 import { readCodeplug } from '../radio/codeplug'
 import { decodeChannelBlock, encodeChannelBlock } from '../radio/channel-memories'
 import { decodeBandPlan } from '../radio/band-plan'
-import { bufferToSettings, readSettings } from '../radio/settings'
+import { bufferToSettings } from '../radio/settings'
 import { decodeScanPresetBlock, encodeScanPresetBlock } from '../radio/scan-presets'
 import RadioCommunicator from '../radio/radio-communicator'
-import { Channel, Group, Band, RadioSettings, ScanPreset } from '../renderer/src/types'
+import { Channel, Group, Band, RadioSettings, ScanPreset } from './types'
 import { decodeDTMFPresetBlock, encodeDTMFPresetBlock } from '../radio/dtmf-presets'
 import { DTMFPreset } from './types'
 
@@ -51,8 +51,8 @@ class CodeplugService {
       const channel = decodeChannelBlock(blockData)
       if (channel) {
         channels.push({
-          channelNumber: blockNum - 1, // Channel 1 = Block 2
-          ...channel
+          ...channel,
+          channelNumber: blockNum - 1
         })
       }
     }
@@ -207,7 +207,7 @@ class CodeplugService {
     }
 
     // Band plan is stored in blocks 0xD0-0xD6
-    const bandBlocks = []
+    const bandBlocks: Buffer[] = []
     for (let blockNum = 0xd0; blockNum <= 0xd6; blockNum++) {
       bandBlocks.push(this.codeplug.subarray(blockNum * 32, (blockNum + 1) * 32))
     }

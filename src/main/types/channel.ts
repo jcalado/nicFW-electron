@@ -19,7 +19,7 @@ export interface ChannelGroups {
 }
 
 export interface ChannelBits {
-  bandwidth: 'Wide' | 'Narrow'
+  bandwidth: Bandwidth
   modulation: RxModulation
   position: number
   pttID: PttID
@@ -27,7 +27,7 @@ export interface ChannelBits {
   busyLock: boolean
 }
 
-enum Bandwidth {
+export enum Bandwidth {
   Wide,
   Narrow
 }

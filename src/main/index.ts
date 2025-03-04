@@ -88,24 +88,7 @@ ipcMain.handle('dialog:showMessageBox', async (_e, options) => {
   return await dialog.showMessageBox(options)
 })
 
-setupSerialHandlers(serialConnection, radio, codeplugService)
+setupSerialHandlers(serialConnection, radio)
 setupRadioHandlers(radio, codeplugService)
 setupFirmwareHandlers(radio)
 setupFileHandlers()
-
-
-ipcMain.handle('codeplug:updateChannel', async (_event, channelNumber: number, channelData: Channel) => {
-  await codeplugService.updateChannel(channelNumber, channelData);
-});
-
-ipcMain.handle('codeplug:updateGroup', async (_event, groupIndex: number, label: string) => {
-  await codeplugService.updateGroup(groupIndex, label);
-});
-
-// ipcMain.handle('codeplug:updateSettings', async (_event, settings: RadioSettings) => {
-//   await codeplugService.updateSettings(settings);
-// });
-
-// ipcMain.handle('codeplug:updateBandPlan', async (_event, bands: Band[]) => {
-//   await codeplugService.updateBandPlan(bands);
-// });

@@ -1,56 +1,65 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { write } from 'fs';
+import { Band, DTMFPreset, Group, RadioSettings, ScanPreset } from '../main/types'
 
 // Custom APIs for renderer
 const api = {
-  getSerialPorts: () => ipcRenderer.invoke('serial:list'),
-  connectPort: (port) => ipcRenderer.invoke('serial:connect', port),
-  disconnectPort: (port) => ipcRenderer.invoke('serial:disconnect', port),
+  getSerialPorts: (): Promise<unknown> => ipcRenderer.invoke('serial:list'),
+  connectPort: (port): Promise<unknown> => ipcRenderer.invoke('serial:connect', port),
+  disconnectPort: (port): Promise<unknown> => ipcRenderer.invoke('serial:disconnect', port),
 
-  readChannels: (port) => ipcRenderer.invoke('radio:readChannels', port),
-  writeChannels: (channels) => ipcRenderer.invoke('radio:writeChannels', channels),
+  readChannels: (): Promise<unknown> => ipcRenderer.invoke('radio:readChannels'),
+  writeChannels: (channels): Promise<unknown> =>
+    ipcRenderer.invoke('radio:writeChannels', channels),
 
-  readBandPlan: (port) => ipcRenderer.invoke('radio:readBands', port),
+  readBandPlan: (): Promise<Band[]> => ipcRenderer.invoke('radio:readBands'),
 
-  readGroups: (port) => ipcRenderer.invoke('radio:readGroups', port),
-  writeGroups: (groups) => ipcRenderer.invoke('radio:writeGroups', groups),
+  readGroups: (): Promise<Group[]> => ipcRenderer.invoke('radio:readGroups'),
+  writeGroups: (groups): Promise<unknown> => ipcRenderer.invoke('radio:writeGroups', groups),
 
-  writeChannel: (channelNumber, channelData) => ipcRenderer.invoke('write-channel', channelNumber, channelData),
-  flashFirmware: (firmwarePath) => ipcRenderer.invoke('firmware:flash', firmwarePath),
-  onProgress: (callback) => {
-    ipcRenderer.on('operation:progress', (_event, progress) => callback(progress));
+  writeChannel: (channelNumber, channelData): Promise<unknown> =>
+    ipcRenderer.invoke('write-channel', channelNumber, channelData),
+  flashFirmware: (firmwarePath): Promise<unknown> =>
+    ipcRenderer.invoke('firmware:flash', firmwarePath),
+  onProgress: (callback: (progress: number) => void): void => {
+    ipcRenderer.on('operation:progress', (_event, progress) => callback(progress))
   },
-  getLatestFirmware: () => ipcRenderer.invoke('firmware:getLatest'),
-  getLatestVersion: () => ipcRenderer.invoke('firmware:getLatestVersion'),
-  getFirmwareArchive: () => ipcRenderer.invoke('firmware:getArchive'),
+  getLatestFirmware: (): Promise<unknown> => ipcRenderer.invoke('firmware:getLatest'),
+  getLatestVersion: (): Promise<unknown> => ipcRenderer.invoke('firmware:getLatestVersion'),
+  getFirmwareArchive: (): Promise<unknown> => ipcRenderer.invoke('firmware:getArchive'),
 
-  openFileDialog: (extension: string) => ipcRenderer.invoke('dialog:openFile', extension),
-  saveFileDialog: () => ipcRenderer.invoke('dialog:saveFile'),
+  openFileDialog: (extension: string): Promise<unknown> =>
+    ipcRenderer.invoke('dialog:openFile', extension),
+  saveFileDialog: (): Promise<unknown> => ipcRenderer.invoke('dialog:saveFile'),
 
-  readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
-  writeFile: (filePath: string, data: string) => ipcRenderer.invoke('file:write', filePath, data),
+  readFile: (filePath: string): Promise<unknown> => ipcRenderer.invoke('file:read', filePath),
+  writeFile: (filePath: string, data: string): Promise<unknown> =>
+    ipcRenderer.invoke('file:write', filePath, data),
 
-  readSettings: () => ipcRenderer.invoke('radio:readSettings'),
-  writeSettings: (settings) => ipcRenderer.invoke('radio:writeSettings', settings),
+  readSettings: (): Promise<RadioSettings> => ipcRenderer.invoke('radio:readSettings'),
+  writeSettings: (settings): Promise<unknown> =>
+    ipcRenderer.invoke('radio:writeSettings', settings),
 
-  readCodeplug: () => ipcRenderer.invoke('radio:readCodeplug'),
-  writeCodeplug: (codeplug) => ipcRenderer.invoke('radio:writeCodeplug', codeplug),
-  saveCodeplug: (codeplug) => ipcRenderer.invoke('radio:saveCodeplug', codeplug),
-  loadCodeplug: (codeplug) => ipcRenderer.invoke('radio:loadCodeplug', codeplug),
-  fetchCodeplug: (onProgress: (progress: number) => void) =>
+  readCodeplug: (): Promise<unknown> => ipcRenderer.invoke('radio:readCodeplug'),
+  writeCodeplug: (codeplug): Promise<unknown> =>
+    ipcRenderer.invoke('radio:writeCodeplug', codeplug),
+  saveCodeplug: (codeplug): Promise<unknown> => ipcRenderer.invoke('radio:saveCodeplug', codeplug),
+  loadCodeplug: (codeplug): Promise<unknown> => ipcRenderer.invoke('radio:loadCodeplug', codeplug),
+  fetchCodeplug: (onProgress: (progress: number) => void): Promise<unknown> =>
     ipcRenderer.invoke('codeplug:fetchCodeplug', onProgress),
 
-  readScanPresets: () => ipcRenderer.invoke('radio:readScanPresets'),
-  writeScanPresets: (presets) => ipcRenderer.invoke('radio:writeScanPresets', presets),
+  readScanPresets: (): Promise<ScanPreset[]> => ipcRenderer.invoke('radio:readScanPresets'),
+  writeScanPresets: (presets): Promise<unknown> =>
+    ipcRenderer.invoke('radio:writeScanPresets', presets),
 
-  // Add DTMF preset methods
-  readDTMFPresets: () => ipcRenderer.invoke('radio:readDTMFPresets'),
-  writeDTMFPresets: (presets) => ipcRenderer.invoke('radio:writeDTMFPresets', presets),
+  readDTMFPresets: (): Promise<DTMFPreset[]> => ipcRenderer.invoke('radio:readDTMFPresets'),
+  writeDTMFPresets: (presets): Promise<unknown> =>
+    ipcRenderer.invoke('radio:writeDTMFPresets', presets)
 }
 
 const dialog = {
-  showMessageBox: (options) => ipcRenderer.invoke('dialog:showMessageBox', options)
+  showMessageBox: (options): Promise<unknown> =>
+    ipcRenderer.invoke('dialog:showMessageBox', options)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
@@ -69,5 +78,6 @@ if (process.contextIsolated) {
   window.electron = electronAPI
   // @ts-ignore (define in dts)
   window.api = api
+  // @ts-ignore (define in dts)
   window.dialog = dialog
 }

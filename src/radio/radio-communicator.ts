@@ -1,19 +1,35 @@
-import { SerialPort } from 'serialport'
+import { SerialPort, SerialPortOpenOptions } from 'serialport'
 import EventEmitter from 'events'
-import fs from 'fs'
+
+interface CommandOptions {
+  waitForResponse?: boolean
+  expectedLength?: number
+  timeout?: number
+}
+
+interface Operation {
+  checkData: () => void
+}
 
 class RadioCommunicator extends EventEmitter {
-  port: SerialPort | null
-  constructor(portPath) {
+  private port: SerialPort | null
+  private portPath: string | null
+  private currentBaudRate: number
+  private buffer: Buffer
+  private currentOperation: Operation | null
+  private isOpen: boolean
+
+  constructor(portPath?: string) {
     super()
     this.port = null
-    this.portPath = portPath
+    this.portPath = portPath || null
     this.currentBaudRate = 38400 // Default baud rate 38400
     this.buffer = Buffer.alloc(0)
     this.currentOperation = null
+    this.isOpen = false // Initialize isOpen flag
   }
 
-  setPortPath(portPath) {
+  setPortPath(portPath: string): void {
     this.portPath = portPath
     if (this.port && this.port.isOpen) {
       // If port is open, close it before setting new path
@@ -31,22 +47,27 @@ class RadioCommunicator extends EventEmitter {
     }
   }
 
-  get currentPortPath() {
-    return this.portPath
+  get currentPortPath(): string {
+    return this.portPath || ''
   }
 
-  get portAvailable() {
-    return this.port && this.port.isOpen
+  async openPort(): Promise<void> {
+    this.port?.open()
   }
 
-  async setBaudRate(newBaudRate) {
+  get portAvailable(): boolean {
+    return Boolean(this.port && this.port.isOpen)
+  }
+
+  async setBaudRate(newBaudRate: number): Promise<void> {
     if (this.currentBaudRate === newBaudRate) return
     if (!this.port || !this.port.isOpen) {
       // Check if port exists and is open
       throw new Error('Port is not open')
     }
-    await new Promise((resolve, reject) => {
-      this.port.update({ baudRate: newBaudRate }, (err) => {
+
+    return new Promise<void>((resolve, reject) => {
+      this.port!.update({ baudRate: newBaudRate }, (err) => {
         if (err) reject(err)
         else {
           this.currentBaudRate = newBaudRate
@@ -56,53 +77,60 @@ class RadioCommunicator extends EventEmitter {
     })
   }
 
-  async connect() {
+  async connect(): Promise<void> {
     if (!this.portPath) {
       throw new Error('Port path is not set')
     }
 
     if (this.isOpen) {
-      // Check the isOpen flag
       return // If already open, resolve immediately
+    }
+
+    // Close existing port if it exists
+    if (this.port) {
+      await this.disconnect()
     }
 
     this.port = new SerialPort({
       path: this.portPath,
-      baudRate: 38400,
+      baudRate: this.currentBaudRate,
       autoOpen: false
-    })
+    } as SerialPortOpenOptions<any>)
 
-    return new Promise((resolve, reject) => {
-      this.port.open((err) => {
+    return new Promise<void>((resolve, reject) => {
+      this.port!.open((err) => {
         if (err) {
           reject(err)
           return
         }
         this.isOpen = true // Set the isOpen flag
-        this.port.on('data', (data) => this.handleData(data))
+        this.port!.on('data', (data) => this.handleData(data))
+        this.port!.on('error', (err) => this.emit('error', err))
         resolve()
       })
     })
   }
 
-  async disconnect() {
-    return new Promise((resolve, reject) => {
-      if (this.port && this.port.isOpen) {
-        this.port.close((err) => {
-          if (err) {
-            reject(err)
-            return
-          }
-          this.isOpen = false // Reset the flag when port is closed
-          resolve()
-        })
-      } else {
-        resolve() // Resolve immediately if the port is not open
+  async disconnect(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.port || !this.port.isOpen) {
+        this.isOpen = false
+        resolve()
+        return
       }
+
+      this.port.close((err) => {
+        this.isOpen = false
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
     })
   }
 
-  handleData(data) {
+  private handleData(data: Buffer): void {
     this.buffer = Buffer.concat([this.buffer, data])
     if (this.currentOperation) {
       this.currentOperation.checkData()
@@ -111,25 +139,31 @@ class RadioCommunicator extends EventEmitter {
 
   /**
    * Sends a command to the serial port.
-   * @param {Buffer|string} command - The command to send. If a string, it is converted to a Buffer using utf8 encoding.
-   * @param {Object} options - Additional options for the operation.
-   * @param {boolean} [options.waitForResponse=true] - Whether or not to wait for a response from the device.
-   * @param {number} [options.expectedLength] - The expected length of the response, in bytes. Required if waitForResponse is true.
-   * @param {number} [options.timeout=2000] - The timeout duration, in milliseconds. Ignored if waitForResponse is false.
-   * @returns {Promise<Buffer>} A Promise that resolves with the response from the device or rejects on error.
+   * @param command - The command to send. If a string, it is converted to a Buffer using utf8 encoding.
+   * @param options - Additional options for the operation.
+   * @returns A Promise that resolves with the response from the device or rejects on error.
    */
-  async executeCommand(command, options = {}) {
-    const { waitForResponse = true, expectedLength, timeout = 2000 } = options
+  async executeCommand(
+    command: Buffer | string,
+    options: CommandOptions = {}
+  ): Promise<Buffer | void> {
+    if (!this.port || !this.port.isOpen) {
+      throw new Error('Port is not open')
+    }
 
-    return new Promise((resolve, reject) => {
+    const { waitForResponse = true, expectedLength, timeout = 2000 } = options
+    const cmdBuffer = Buffer.isBuffer(command) ? command : Buffer.from(command, 'utf8')
+
+    return new Promise<Buffer | void>((resolve, reject) => {
       if (!waitForResponse) {
-        return this.port.write(command, (err) => {
+        this.port!.write(cmdBuffer, (err) => {
           if (err) {
             reject(err)
           } else {
             resolve()
           }
         })
+        return
       }
 
       if (!expectedLength) {
@@ -154,7 +188,7 @@ class RadioCommunicator extends EventEmitter {
         }
       }
 
-      this.port.write(command, (err) => {
+      this.port!.write(cmdBuffer, (err) => {
         if (err) {
           clearTimeout(timer)
           this.currentOperation = null
@@ -164,15 +198,14 @@ class RadioCommunicator extends EventEmitter {
     })
   }
 
-  async initialize() {
-    await this.executeCommand(Buffer.from([0x45]), { expectedLength: 1 })
-    // await this.executeCommand(Buffer.from([0x46]), 1);
+  async initialize(): Promise<Buffer | void> {
+    return await this.executeCommand(Buffer.from([0x45]), { expectedLength: 1 })
   }
 
-  async readBlock(blockNumber) {
-    const response = await this.executeCommand(Buffer.from([0x30, blockNumber]), {
+  async readBlock(blockNumber: number): Promise<Buffer> {
+    const response = (await this.executeCommand(Buffer.from([0x30, blockNumber]), {
       expectedLength: 34
-    })
+    })) as Buffer
 
     if (response[0] !== 0x30) {
       throw new Error(`Invalid response header: 0x${response[0].toString(16)}`)
@@ -193,7 +226,7 @@ class RadioCommunicator extends EventEmitter {
     return payload
   }
 
-  async writeBlock(blockNumber, data) {
+  async writeBlock(blockNumber: number, data: Buffer): Promise<boolean> {
     if (data.length !== 32) {
       throw new Error('Block data must be exactly 32 bytes')
     }
@@ -209,178 +242,213 @@ class RadioCommunicator extends EventEmitter {
 
     // Send the command and block data
     await this.executeCommand(command, {
-      expectedLength: 0,
       waitForResponse: false
-    }) // Send write command
-    await this.executeCommand(blockWithChecksum, { expectedLength: 1 }) // Send block data + checksum
+    })
 
-    // Wait for ACK
-    // const ack = await this.executeCommand(Buffer.from([0x31]), 1);
-    // if (ack[0] !== 0x31) {
-    //   throw new Error("Write operation failed: No ACK received");
-    // }
+    await this.executeCommand(blockWithChecksum, { expectedLength: 1 })
 
     return true
   }
 
-  calculateChecksum(data) {
+  calculateChecksum(data: Buffer): number {
     return data.reduce((sum, byte) => sum + byte, 0) & 0xff
   }
 
-  async close() {
-    return new Promise((resolve) => {
-      this.port.close(resolve)
-    })
+  async close(): Promise<void> {
+    return this.disconnect()
   }
 
-  async restart() {
+  async restart(): Promise<void> {
     // Restart the radio
     await this.executeCommand(Buffer.from([0x49]), {
-      expectedLength: 0,
       waitForResponse: false
     })
   }
 
-  async flashFirmware(firmware: Buffer, progressCallback?: (progress: number) => void) {
+  async flashFirmware(
+    firmware: Buffer,
+    progressCallback?: (progress: number) => void
+  ): Promise<void> {
     const originalBaud = this.currentBaudRate
-    const totalBlocks = Math.ceil(firmware.length / 32)
 
-    this.port.close()
+    // Close existing connection
+    await this.disconnect()
+
+    // Open new connection at high baud rate
     this.port = new SerialPort({
       path: this.portPath,
       baudRate: 115200,
       autoOpen: false
-    })
-    this.port.open()
+    } as SerialPortOpenOptions<any>)
 
-    try {
-      const initSequence = Buffer.from([
-        0xa0,
-        0xee,
-        0x74,
-        0x71,
-        0x07,
-        0x74,
-        ...Array(30).fill(0x55)
-      ])
-
-      return new Promise((resolve, reject) => {
-        let currentBlock = 0
-        const totalBlocks = Math.ceil(firmware.length / 32)
-        let flashStarted = false
-        let initTimeout
-
-        const cleanup = () => {
-          this.port.removeAllListeners('data')
-          this.port.on('data', this.handleData.bind(this))
-          clearTimeout(initTimeout)
+    return new Promise<void>((resolve, reject) => {
+      this.port!.open(async (openErr) => {
+        if (openErr) {
+          reject(openErr)
+          return
         }
 
-        const handleInitData = (data) => {
-          for (const byte of data) {
-            if (byte === 0xa5) {
-              if (!flashStarted) {
-                flashStarted = true
-                this.executeCommand(initSequence, {
-                  expectedLength: 0,
-                  waitForResponse: false
-                })
+        this.isOpen = true
 
-                setTimeout(startFlashing, 500)
-                this.port.removeListener('data', handleInitData)
-                return
-              }
+        try {
+          const initSequence = Buffer.from([
+            0xa0,
+            0xee,
+            0x74,
+            0x71,
+            0x07,
+            0x74,
+            ...Array(30).fill(0x55)
+          ])
+
+          let currentBlock = 0
+          const totalBlocks = Math.ceil(firmware.length / 32)
+          let flashStarted = false
+          let initTimeout: NodeJS.Timeout
+
+          const cleanup = () => {
+            if (this.port) {
+              this.port.removeAllListeners('data')
+              this.port.on('data', this.handleData.bind(this))
             }
-          }
-        }
-
-        const sendNextBlock = () => {
-          if (currentBlock >= totalBlocks) {
-            finishFlashing()
-            return
+            clearTimeout(initTimeout)
           }
 
-          const start = currentBlock * 32
-          const end = start + 32
-          let blockData = firmware.slice(start, end)
-          if (blockData.length < 32) {
-            blockData = Buffer.concat([blockData, Buffer.alloc(32 - blockData.length).fill(0xff)])
-          }
-
-          const packet = Buffer.alloc(36)
-          packet[0] = currentBlock === totalBlocks - 1 ? 0xa2 : 0xa1
-          packet.writeUInt16BE(currentBlock, 1)
-          blockData.copy(packet, 4)
-          packet[3] = blockData.reduce((sum, byte) => sum + byte, 0) & 0xff
-
-          // Handler for waiting for 0xA3 acknowledgment
-          const waitForAck = (data) => {
+          const handleInitData = (data: Buffer) => {
             for (const byte of data) {
-              if (byte === 0xa3) {
-                this.port.removeListener('data', waitForAck)
-                currentBlock++
-                updateProgress()
+              if (byte === 0xa5) {
+                if (!flashStarted) {
+                  flashStarted = true
+                  this.port!.write(initSequence)
 
-                // Send next block only after receiving 0xA3
-                sendNextBlock()
-                return
+                  setTimeout(startFlashing, 500)
+                  this.port!.removeListener('data', handleInitData)
+                  return
+                }
               }
             }
           }
 
-          // Listen for 0xA3 acknowledgment
-          this.port.removeAllListeners('data')
-          this.port.on('data', waitForAck)
+          const sendNextBlock = () => {
+            if (currentBlock >= totalBlocks) {
+              finishFlashing()
+              return
+            }
 
-          // Send current block
-          this.port.write(packet, (err) => {
-            if (err) return finishFlashing(err)
-          })
+            const start = currentBlock * 32
+            const end = Math.min(start + 32, firmware.length)
+            let blockData = firmware.slice(start, end)
+
+            if (blockData.length < 32) {
+              blockData = Buffer.concat([blockData, Buffer.alloc(32 - blockData.length).fill(0xff)])
+            }
+
+            const packet = Buffer.alloc(36)
+            packet[0] = currentBlock === totalBlocks - 1 ? 0xa2 : 0xa1
+            packet.writeUInt16BE(currentBlock, 1)
+            blockData.copy(packet, 4)
+            packet[3] = blockData.reduce((sum, byte) => sum + byte, 0) & 0xff
+
+            // Handler for waiting for 0xA3 acknowledgment
+            const waitForAck = (data: Buffer) => {
+              for (const byte of data) {
+                if (byte === 0xa3) {
+                  this.port!.removeListener('data', waitForAck)
+                  currentBlock++
+                  updateProgress()
+
+                  // Send next block only after receiving 0xA3
+                  sendNextBlock()
+                  return
+                }
+              }
+            }
+
+            // Listen for 0xA3 acknowledgment
+            if (this.port) {
+              this.port.removeAllListeners('data')
+              this.port.on('data', waitForAck)
+
+              // Send current block
+              this.port.write(packet, (err) => {
+                if (err) return finishFlashing(err)
+              })
+            }
+          }
+
+          const updateProgress = () => {
+            const percent = Math.floor((currentBlock / totalBlocks) * 100)
+            if (progressCallback) {
+              progressCallback(percent)
+            }
+          }
+
+          const startFlashing = () => {
+            sendNextBlock()
+          }
+
+          const finishFlashing = (error?: Error) => {
+            cleanup()
+            if (error) {
+              reject(error)
+            } else {
+              resolve()
+            }
+
+            // Restore original baud rate
+            setTimeout(async () => {
+              try {
+                await this.disconnect()
+                this.port = new SerialPort({
+                  path: this.portPath,
+                  baudRate: originalBaud,
+                  autoOpen: false
+                } as SerialPortOpenOptions<any>)
+                await this.connect()
+              } catch (err) {
+                console.error('Failed to restore original baud rate:', err)
+              }
+            }, 1000)
+          }
+
+          // Initial setup
+          this.port!.removeAllListeners('data')
+          this.port!.on('data', handleInitData)
+
+          // Set timeout for bootloader detection
+          initTimeout = setTimeout(() => {
+            cleanup()
+            reject(new Error('Timed out waiting for bootloader response'))
+          }, 10000)
+        } catch (error) {
+          await this.disconnect()
+          reject(error)
         }
-
-        const updateProgress = () => {
-          const percent = ((currentBlock / totalBlocks) * 100).toFixed(1)
-          process.stdout.write(`\rFlashing progress: ${percent}%`)
-          progressCallback(percent)
-          if (currentBlock >= totalBlocks) process.stdout.write('\n')
-        }
-
-        const startFlashing = () => {
-          sendNextBlock()
-        }
-
-        const finishFlashing = (error) => {
-          cleanup()
-          error ? reject(error) : resolve()
-        }
-
-        // Initial setup
-        this.port.removeAllListeners('data')
-        this.port.on('data', handleInitData)
       })
-    } finally {
-      await this.setBaudRate(originalBaud)
-    }
+    })
   }
 
-  // async readCodeplug(progressCallback?: (progress: number) => void) {
-  //   try {
-  //     const codeplug = Buffer.alloc(8192)
-  //     for (let blockNum = 0; blockNum < 256; blockNum++) {
-  //       const blockData = await this.readBlock(blockNum)
-  //       blockData.copy(codeplug, blockNum * 32)
-  //       let percent = (((blockNum + 1) / 256) * 100).toFixed(0)
-  //       progressCallback(percent)
-  //     }
+  // Uncomment if needed
+  /*
+  async readCodeplug(progressCallback?: (progress: number) => void): Promise<Buffer> {
+    try {
+      const codeplug = Buffer.alloc(8192);
+      for (let blockNum = 0; blockNum < 256; blockNum++) {
+        const blockData = await this.readBlock(blockNum);
+        blockData.copy(codeplug, blockNum * 32);
+        if (progressCallback) {
+          const percent = Math.floor(((blockNum + 1) / 256) * 100);
+          progressCallback(percent);
+        }
+      }
 
-  //     await this.executeCommand(Buffer.from([0x46]), { expectedLength: 1 })
-
-
-  //     return codeplug
-  //   } finally {
-  //     await this.close()
-  //   }
-  // }
+      await this.executeCommand(Buffer.from([0x46]), { expectedLength: 1 });
+      return codeplug;
+    } finally {
+      // Don't close the connection here, let the caller decide
+    }
+  }
+  */
 }
 
 export default RadioCommunicator

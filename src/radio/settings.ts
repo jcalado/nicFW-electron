@@ -1,5 +1,15 @@
 import RadioCommunicator from './radio-communicator'
-import { AfFilters, ASLOptions, BattOptions, IfOptions, KeytoneOptions, PinActions, PttOptions, RadioSettings, SBarOptions } from '../main/types/radioSettings'
+import {
+  AfFilters,
+  ASLOptions,
+  BattOptions,
+  IfOptions,
+  KeytoneOptions,
+  PinActions,
+  PttOptions,
+  RadioSettings,
+  SBarOptions
+} from '../main/types/radioSettings'
 
 export async function readSettings(radio: RadioCommunicator): Promise<RadioSettings> {
   // The settings block occupies 128 bytes starting at address 0x1900 (decimal 6400).
@@ -66,7 +76,11 @@ export function bufferToSettings(buf: Buffer): RadioSettings {
     afFilters: buf.readUInt8(0x60) as AfFilters,
     ifFreq: buf.readUInt8(0x61) as IfOptions,
     sBarAlwaysOn: buf.readUInt8(0x62),
-    filler: buf.subarray(0x63, 0x63 + 29)
+    lockedVfo: buf.readUInt8(0x63),
+    vfoLockActive: buf.readUInt8(0x64),
+    dualWatchDelay: buf.readUInt8(0x65),
+    subToneDeviation: buf.readUInt8(0x66),
+    filler: buf.subarray(0x67, 0x67 + 25),
   }
 
   // Parse the 2 VFO state blocks.
@@ -88,10 +102,9 @@ export function bufferToSettings(buf: Buffer): RadioSettings {
   return settings
 }
 
-
 export async function writeSettings(
   radio: RadioCommunicator,
-  settings: RadioSettings  // Fixed: changed from radioSettings to RadioSettings
+  settings: RadioSettings
 ): Promise<void> {
   // Create a buffer to hold the settings block (128 bytes)
   const buffer = Buffer.alloc(128)
@@ -159,24 +172,14 @@ export async function writeSettings(
   buffer.writeUInt8(settings.afFilters, 0x60)
   buffer.writeUInt8(settings.ifFreq, 0x61)
   buffer.writeUInt8(settings.sBarAlwaysOn, 0x62)
-
-  // Add newer fields if they're part of your radioSettings type
-  if ('lockedVfo' in settings) {
-    buffer.writeUInt8(settings.lockedVfo, 0x63)
-  }
-  if ('vfoLockActive' in settings) {
-    buffer.writeUInt8(settings.vfoLockActive, 0x64)
-  }
-  if ('dualWatchDelay' in settings) {
-    buffer.writeUInt8(settings.dualWatchDelay, 0x65)
-  }
-  if ('subToneDeviation' in settings) {
-    buffer.writeUInt8(settings.subToneDeviation, 0x66)
-  }
+  buffer.writeUInt8(settings.lockedVfo, 0x63)
+  buffer.writeUInt8(settings.vfoLockActive, 0x64)
+  buffer.writeUInt8(settings.dualWatchDelay, 0x65)
+  buffer.writeUInt8(settings.subToneDeviation, 0x66)
 
   // Fill remaining space with zeros or copy from settings.filler
   if (settings.filler && Buffer.isBuffer(settings.filler)) {
-    settings.filler.copy(buffer, 0x63, 0, Math.min(settings.filler.length, 29))
+    settings.filler.copy(buffer, 0x67, 0, Math.min(settings.filler.length, 25))
   }
 
   // Split the buffer into 32-byte blocks

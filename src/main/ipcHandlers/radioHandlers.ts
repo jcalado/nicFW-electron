@@ -1,58 +1,45 @@
 import { dialog, ipcMain } from 'electron'
 import RadioCommunicator from '../../radio/radio-communicator'
-import { readChannelMemories, encodeChannelBlock, decodeChannelBlock } from '../../radio/channel-memories'
-import { readGroupLabels, writeGroupLabel } from '../../radio/group-labels.js'
-import { readBandPlan } from '../../radio/band-plan.js'
-import { readSettings, writeSettings } from '../../radio/settings.js'
+import { writeSettings } from '../../radio/settings.js'
 import { readCodeplug, writeCodeplug, saveCodeplug } from '../../radio/codeplug.js'
 import fs from 'fs'
 import { Channel, Group } from '../types'
 
 export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): void {
-
-
-  ipcMain.handle('codeplug:fetchCodeplug', async (event, onProgress) => {
+  ipcMain.handle('codeplug:fetchCodeplug', async (event) => {
     try {
       await codeplugService.fetchCodeplug((progress: number) => {
-        event.sender.send('operation:progress', progress); // Send progress updates to the renderer
-      });
+        event.sender.send('operation:progress', progress) // Send progress updates to the renderer
+      })
       event.sender.send('operation:progress', 120)
     } catch (error) {
-      console.error('Error fetching codeplug:', error);
-      throw error;
+      console.error('Error fetching codeplug:', error)
+      throw error
     }
-  });
+  })
 
-  // ipcMain.handle('radio:writeChannels', async (_event, channels: Channel[]) => {
-  //   try {
-  //     await radio.connect()
-  //     await radio.initialize()
+  ipcMain.handle(
+    'codeplug:updateChannel',
+    async (_event, channelNumber: number, channelData: Channel) => {
+      await codeplugService.updateChannel(channelNumber, channelData)
+    }
+  )
 
-  //     for (const channel of channels) {
-  //       const blockData = encodeChannelBlock(channel)
-  //       await radio.writeBlock(channel.channelNumber + 1, blockData) // Channel 1 = Block 2
-  //     }
-
-  //     console.log('Channels written successfully!')
-  //   } catch (error) {
-  //     console.error('Error writing channels:', error)
-  //     throw error
-  //   } finally {
-  //     await radio.close()
-  //   }
-  // })
+  ipcMain.handle('codeplug:updateGroup', async (_event, groupIndex: number, label: string) => {
+    await codeplugService.updateGroup(groupIndex, label)
+  })
 
   // Handler for reading channels from the radio
   ipcMain.handle('radio:readChannels', async () => {
-    const channels = await codeplugService.readChannels();
+    const channels = await codeplugService.readChannels()
     return channels
   })
 
   ipcMain.handle('radio:writeChannels', async (_e, channels: Channel[]) => {
-    await codeplugService.writeChannels(channels);
+    await codeplugService.writeChannels(channels)
   })
 
-  ipcMain.handle('radio:readSettings', async (_e) => {
+  ipcMain.handle('radio:readSettings', async () => {
     console.log('Reading settings...')
     const settings = await codeplugService.readSettings()
     return settings
@@ -61,13 +48,14 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
   ipcMain.handle('radio:writeSettings', async (_e, settings) => {
     try {
       if (!radio.portAvailable) {
-        await radio.port?.open()
+        await radio.openPort()
       }
       await radio.connect()
       await radio.initialize()
       await writeSettings(radio, settings)
       console.log('Settings written successfully!')
-      await radio.executeCommand([0x49], { waitForResponse: false, expectedLength: 0 })
+      const buffer = Buffer.from([0x49])
+      await radio.executeCommand(buffer, { waitForResponse: false, expectedLength: 0 })
     } catch (error) {
       console.error('Error writing settings:', error)
       throw error
@@ -76,14 +64,14 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
     }
   })
 
-  ipcMain.handle('radio:readBands', async (_e) => {
+  ipcMain.handle('radio:readBands', async () => {
     console.log('Reading band plan...')
-    const bands = await codeplugService.readBandPlan();
+    const bands = await codeplugService.readBandPlan()
     return bands
   })
 
-  ipcMain.handle('radio:readGroups', async (_e) => {
-    const groups = await codeplugService.readGroups();
+  ipcMain.handle('radio:readGroups', async () => {
+    const groups = await codeplugService.readGroups()
     return groups
   })
 
