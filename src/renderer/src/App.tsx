@@ -2,8 +2,13 @@ import { SelectTabData, SelectTabEvent, Tab, TabList } from '@fluentui/react-com
 import ChannelList from './components/ChannelList'
 import PortPicker from './components/PortPicker'
 import ScanPresetList from './components/ScanPresetList'
-
-import { useEffect, useState } from 'react'
+import GroupList from './components/GroupList'
+import BandPlanList from './components/BandPlanList'
+import Firmware from './components/Firmware'
+import Settings from './components/Settings'
+import Codeplug from './components/Codeplug'
+import DTMFPresetList from './components/DTMFPresetList'
+import { useAppStore } from './store/store'
 import {
   ArchiveFilled,
   ChannelFilled,
@@ -15,26 +20,31 @@ import {
   SlideTransitionFilled,
   SoundWaveCircleFilled
 } from '@fluentui/react-icons'
-import GroupList from './components/GroupList'
-import BandPlanList from './components/BandPlanList'
-import { Band, Group, Channel, ScanPreset, DTMFPreset } from '../../main/types'
-import Firmware from './components/Firmware'
-import Settings from './components/Settings'
-import { RadioSettings } from '../../main/types/radioSettings'
-import Codeplug from './components/Codeplug'
-import DTMFPresetList from './components/DTMFPresetList'
+import { Band, Channel, Group, RadioSettings } from '@main/types'
 
 function App(): JSX.Element {
-  const [selectedTab, setSelectedTab] = useState('port-picker')
-  const [selectedPort, setSelectedPort] = useState('')
-  const [isConnected, setIsConnected] = useState(false)
-
-  const [channels, setChannels] = useState<Channel[]>([])
-  const [bands, setBands] = useState<Band[]>([])
-  const [groups, setGroups] = useState<Group[]>([])
-  const [settings, setSettings] = useState<RadioSettings>()
-  const [scanPresets, setScanPresets] = useState<ScanPreset[]>([])
-  const [dtmfPresets, setDTMFPresets] = useState<DTMFPreset[]>([])
+  // Use the Zustand store instead of useState
+  const {
+    selectedTab,
+    setSelectedTab,
+    selectedPort,
+    setSelectedPort,
+    isConnected,
+    setIsConnected,
+    channels,
+    setChannels,
+    bands,
+    setBands,
+    groups,
+    setGroups,
+    settings,
+    setSettings,
+    scanPresets,
+    setScanPresets,
+    dtmfPresets,
+    setDTMFPresets,
+    fetchCodeplug
+  } = useAppStore()
 
   const handlePortSelect = (port: string): void => {
     console.log(`Selected port: ${port}`)
@@ -45,21 +55,9 @@ function App(): JSX.Element {
     console.log(`Connection status changed to ${connected}`)
     if (connected !== '') {
       setIsConnected(true)
-      await handleFetchCodeplug()
-      processCodeplug()
+      await fetchCodeplug()
     } else {
       setIsConnected(false)
-    }
-  }
-
-  const handleFetchCodeplug = async () => {
-    try {
-      await window.api.fetchCodeplug()
-      console.log('Codeplug fetched successfully!')
-      // processCodeplug()
-    } catch (error) {
-      console.error('Error fetching codeplug:', error)
-    } finally {
     }
   }
 
@@ -80,7 +78,7 @@ function App(): JSX.Element {
   }
 
   const handleChannelsReceived = (channels: Channel[]): void => {
-    console.log(`Received channels: ${bands}`)
+    console.log(`Received channels: ${channels.length}`)
     setChannels(channels)
   }
 
@@ -90,86 +88,6 @@ function App(): JSX.Element {
   }
 
   const statusColor = isConnected ? 'green' : 'red'
-
-  const processCodeplug = async () => {
-    console.log('Codeplug fetched successfully!')
-
-    const fetchChannels = async () => {
-      try {
-        const channels = await window.api.readChannels()
-        setChannels(channels)
-        setSelectedTab('channel-list')
-      } catch (error) {
-        console.error('Error fetching channels:', error)
-      }
-    }
-
-    const fetchGroups = async () => {
-      try {
-        const groups = await window.api.readGroups()
-        setGroups(groups)
-      } catch (error) {
-        console.error('Error fetching groups:', error)
-      }
-    }
-
-    const fetchScanPresets = async () => {
-      try {
-        const presets = await window.api.readScanPresets()
-        setScanPresets(presets)
-      } catch (error) {
-        console.error('Error fetching scan presets:', error)
-      }
-    }
-
-    const fetchBandPlan = async () => {
-      try {
-        const bands = await window.api
-          .readBandPlan()
-          .then((data) => {
-            setBands(data)
-          })
-          .catch((error) => {
-            console.error('Error reading bandplan:', error)
-          })
-      } catch (error) {
-        console.error('Error fetching bandplan:', error)
-      }
-    }
-
-    const fetchSettings = async () => {
-      console.log('Fetching settings')
-      try {
-        await window.api
-          .readSettings()
-          .then((data) => {
-            console.log(data)
-            setSettings(data)
-          })
-          .catch((error) => {
-            console.error('Error reading bandplan:', error)
-          })
-      } catch (error) {
-        console.error('Error fetching bandplan:', error)
-      }
-    }
-
-    const fetchDTMFPresets = async () => {
-      try {
-        const presets = await window.api.readDTMFPresets()
-        setDTMFPresets(presets)
-      } catch (error) {
-        console.error('Error fetching DTMF presets:', error)
-      }
-    }
-
-    await fetchSettings()
-    await fetchBandPlan()
-    await fetchChannels()
-    await fetchGroups()
-    await fetchScanPresets()
-    await fetchDTMFPresets()
-  }
 
   return (
     <>
