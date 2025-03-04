@@ -1,6 +1,6 @@
 import { Dropdown, Option, InfoLabel, Input, Switch } from '@fluentui/react-components'
 import { tokens } from '@fluentui/react-components'
-import { KeytoneOptions, PinActions } from '../../types/radioSettings'
+import { KeytoneOptions, PinActions } from '../../../../main/types/radioSettings'
 
 export const DeviceTab = ({ settings, onChange }) => {
   return (

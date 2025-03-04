@@ -13,7 +13,7 @@ import {
   Switch,
   makeStyles
 } from '@fluentui/react-components'
-import { Band } from '../types'
+import { Band } from '../../../main/types'
 
 const useStyles = makeStyles({
   content: {

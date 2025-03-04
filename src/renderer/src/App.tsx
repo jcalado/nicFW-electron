@@ -17,10 +17,10 @@ import {
 } from '@fluentui/react-icons'
 import GroupList from './components/GroupList'
 import BandPlanList from './components/BandPlanList'
-import { Band, Group, Channel, ScanPreset, DTMFPreset } from './types'
+import { Band, Group, Channel, ScanPreset, DTMFPreset } from '../../main/types'
 import Firmware from './components/Firmware'
 import Settings from './components/Settings'
-import { RadioSettings } from './types/radioSettings'
+import { RadioSettings } from '../../main/types/radioSettings'
 import Codeplug from './components/Codeplug'
 import DTMFPresetList from './components/DTMFPresetList'
 

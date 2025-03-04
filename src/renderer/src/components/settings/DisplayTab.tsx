@@ -1,8 +1,8 @@
 import { Dropdown, InfoLabel, Input, Option, Switch, tokens } from '@fluentui/react-components'
-import { BattOptions, RadioSettings, SBarOptions } from '@renderer/types/radioSettings'
+import { BattOptions, RadioSettings, SBarOptions } from '@main/types'
 
 interface DisplayTabProps {
-  settings: RadioSettings
+  settings: RadioSettings | undefined
   onChange: (setting: string, value: any) => void
 }
 

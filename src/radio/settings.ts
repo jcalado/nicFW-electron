@@ -1,7 +1,7 @@
 import RadioCommunicator from './radio-communicator'
-import { radioSettings } from '../renderer/src/types/radioSettings'
+import { AfFilters, ASLOptions, BattOptions, IfOptions, KeytoneOptions, PinActions, PttOptions, RadioSettings, SBarOptions } from '../main/types/radioSettings'
 
-export async function readSettings(radio: RadioCommunicator): Promise<radioSettings> {
+export async function readSettings(radio: RadioCommunicator): Promise<RadioSettings> {
   // The settings block occupies 128 bytes starting at address 0x1900 (decimal 6400).
   // 128 bytes / 32 bytes per block = 4 blocks: blocks 200, 201, 202, and 203.
   const blockNumbers = [200, 201, 202, 203]
@@ -11,8 +11,11 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
     blocks.push(block)
   }
   const buf = Buffer.concat(blocks)
+  return bufferToSettings(buf)
+}
 
-  const settings: radioSettings = {
+export function bufferToSettings(buf: Buffer): RadioSettings {
+  const settings: RadioSettings = {
     magic: buf.readUInt16BE(0x00),
     squelch: buf.readUInt8(0x02),
     dualWatch: buf.readUInt8(0x03),
@@ -21,12 +24,12 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
     step: buf.readUInt16BE(0x06),
     rxSplit: buf.readUInt16BE(0x08),
     txSplit: buf.readUInt16BE(0x0a),
-    pttMode: buf.readUInt8(0x0c),
+    pttMode: buf.readUInt8(0x0c) as PttOptions,
     txModMeter: buf.readUInt8(0x0d),
     micGain: buf.readUInt8(0x0e),
     txDeviation: buf.readUInt8(0x0f),
     xtal671: buf.readInt8(0x10),
-    battStyle: buf.readUInt8(0x11),
+    battStyle: buf.readUInt8(0x11) as BattOptions,
     scanRange: buf.readUInt16BE(0x12),
     scanPersist: buf.readUInt16BE(0x14),
     scanResume: buf.readUInt8(0x16),
@@ -42,10 +45,10 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
     keyLock: buf.readUInt8(0x46),
     bluetooth: buf.readUInt8(0x47),
     powerSave: buf.readUInt8(0x48),
-    keyTones: buf.readUInt8(0x49),
+    keyTones: buf.readUInt8(0x49) as KeytoneOptions,
     ste: buf.readUInt8(0x4a),
     rfGain: buf.readUInt8(0x4b),
-    sBarStyle: buf.readUInt8(0x4c),
+    sBarStyle: buf.readUInt8(0x4c) as SBarOptions,
     sqNoiseLev: buf.readUInt8(0x4d),
     lastFmtFreq: buf.readUInt32BE(0x4e),
     vox: buf.readUInt8(0x52),
@@ -55,15 +58,15 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
     dtmfSpeed: buf.readUInt8(0x57),
     noiseGate: buf.readUInt8(0x58),
     scanUpdate: buf.readUInt8(0x59),
-    asl: buf.readUInt8(0x5a),
+    asl: buf.readUInt8(0x5a) as ASLOptions,
     disableFmt: buf.readUInt8(0x5b),
     pin: buf.readUInt16BE(0x5c),
-    pinAction: buf.readUInt8(0x5e),
+    pinAction: buf.readUInt8(0x5e) as PinActions,
     lcdInverted: buf.readUInt8(0x5f),
-    afFilters: buf.readUInt8(0x60),
-    ifFreq: buf.readUInt8(0x61),
+    afFilters: buf.readUInt8(0x60) as AfFilters,
+    ifFreq: buf.readUInt8(0x61) as IfOptions,
     sBarAlwaysOn: buf.readUInt8(0x62),
-    filler: buf.slice(0x63, 0x63 + 29)
+    filler: buf.subarray(0x63, 0x63 + 29)
   }
 
   // Parse the 2 VFO state blocks.
@@ -85,9 +88,10 @@ export async function readSettings(radio: RadioCommunicator): Promise<radioSetti
   return settings
 }
 
+
 export async function writeSettings(
   radio: RadioCommunicator,
-  settings: radioSettings
+  settings: RadioSettings  // Fixed: changed from radioSettings to RadioSettings
 ): Promise<void> {
   // Create a buffer to hold the settings block (128 bytes)
   const buffer = Buffer.alloc(128)

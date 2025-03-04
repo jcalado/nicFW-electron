@@ -13,7 +13,7 @@ import {
   makeStyles
 } from '@fluentui/react-components'
 import React from 'react'
-import { ScanPreset } from '../types'
+import { ScanPreset } from '../../../main/types'
 
 const useStyles = makeStyles({
   content: {

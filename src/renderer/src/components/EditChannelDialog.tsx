@@ -16,7 +16,7 @@ import {
   Switch
 } from '@fluentui/react-components'
 import React from 'react'
-import { Channel } from '../types'
+import { Channel } from '../../../main/types'
 
 const useStyles = makeStyles({
   content: {

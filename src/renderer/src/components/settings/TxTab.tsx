@@ -1,6 +1,6 @@
 import { Dropdown, InfoLabel, Input, Option, Switch } from '@fluentui/react-components'
 import { tokens } from '@fluentui/react-components'
-import { AfFilters, PttOptions } from '@renderer/types/radioSettings'
+import { AfFilters, PttOptions } from '@main/types'
 
 
 export const TxTab = ({ settings }) => (

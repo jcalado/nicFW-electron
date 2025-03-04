@@ -1,6 +1,4 @@
 import fs from 'fs'
-import chalk from 'chalk'
-import RadioCommunicator from './radio-communicator'
 
 /**
  * Reads the codeplug from the specified radio port and saves it to a file.
@@ -73,7 +71,7 @@ export async function writeCodeplug(radio, codeplug, progressCallback) {
     await radio.executeCommand(Buffer.from([0x46]), { expectedLength: 1 })
     await radio.restart()
 
-    console.log(chalk.green('\nCodeplug write successful! Radio restarting...'))
+    console.log('\nCodeplug write successful! Radio restarting...')
   } finally {
     await radio.close()
   }

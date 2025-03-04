@@ -1,4 +1,4 @@
-import { ScanPreset } from '../renderer/src/types';
+import { ScanPreset } from '../main/types';
 
 /**
  * Decodes a scan preset block from binary buffer, following the same logic as the C# implementation

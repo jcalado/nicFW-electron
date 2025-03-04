@@ -1,6 +1,6 @@
 import { Dropdown, InfoLabel, Input, Option } from '@fluentui/react-components'
 import { tokens } from '@fluentui/react-components'
-import { ASLOptions } from '@renderer/types/radioSettings'
+import { ASLOptions } from '@main/types'
 import { Switch } from '@fluentui/react-components'
 
 export const ScanTab = ({ settings, onChange }) => {

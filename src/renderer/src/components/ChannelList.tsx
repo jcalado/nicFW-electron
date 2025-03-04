@@ -37,7 +37,7 @@ import {
   ArrowTurnRightRegular
 } from '@fluentui/react-icons'
 import React, { useState } from 'react'
-import { Channel } from '../types'
+import { Channel } from '../../../main/types'
 import PropTypes from 'prop-types'
 import EditChannelDialog from './EditChannelDialog'
 import WriteChannelsDialog from './WriteChannelsDialog'

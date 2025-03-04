@@ -5,65 +5,65 @@ type VfoState = {
   mode: number
 }
 
-const AfFilters = {
-  All: 0,
-  'Hi-Pass + Lo-Pass': 1,
-  'Hi-Pass + De-emf': 2,
-  'Hi-Pass Only': 3,
-  'Lo-Pass + De-emf': 4,
-  'Lo-Pass Only': 5,
-  'De-emphasis Only': 6,
-  'None': 7,
-  'Fsk Mode': 8
+enum AfFilters {
+  All = 0,
+  'Hi-Pass + Lo-Pass' = 1,
+  'Hi-Pass + De-emf' = 2,
+  'Hi-Pass Only' = 3,
+  'Lo-Pass + De-emf' = 4,
+  'Lo-Pass Only' = 5,
+  'De-emphasis Only' = 6,
+  None = 7,
+  'Fsk Mode' = 8
 }
 
-const PttOptions = {
-  Dual: 0,
-  Single: 1,
-  Hybrid: 2
+enum PttOptions {
+  Dual = 0,
+  Single = 1,
+  Hybrid = 2
 }
 
-const ASLOptions = {
-  "Off": 0,
-  "COS": 1,
-  "USB": 2,
-  "Inverted COS": 3
+enum ASLOptions {
+  Off = 0,
+  COS = 1,
+  USB = 2,
+  'Inverted COS' = 3
 }
 
-const PinActions = {
-  "Off": 0,
-  "Unlock": 1,
-  "Power Off": 2,
+enum PinActions {
+  'Off' = 0,
+  'Unlock' = 1,
+  'Power Off' = 2
 }
 
-const SBarOptions = {
-  "Segment": 0,
-  "Stepped": 1,
-  "Solid": 2
+enum SBarOptions {
+  'Segment' = 0,
+  'Stepped' = 1,
+  'Solid' = 2
 }
 
-const BattOptions = {
-  "Off": 0,
-  "Icon": 1,
-  "Percent": 2,
-  "Voltage": 3
+enum BattOptions {
+  'Off' = 0,
+  'Icon' = 1,
+  'Percent' = 2,
+  'Voltage' = 3
 }
 
-const IfOptions = {
-  "8.46": 0,
-  "7.25": 1,
-  "6.35": 2,
-  "5.64": 3,
-  "5.08": 4,
-  "4.62": 5,
-  "4.23": 6
+enum IfOptions {
+  '8.46' = 0,
+  '7.25' = 1,
+  '6.35' = 2,
+  '5.64' = 3,
+  '5.08' = 4,
+  '4.62' = 5,
+  '4.23' = 6
 }
 
-const KeytoneOptions =  {
-  "Off": 0,
-  "On": 1,
-  "Differential":2 ,
-  "Voice": 3
+enum KeytoneOptions {
+  'Off' = 0,
+  'On' = 1,
+  'Differential' = 2,
+  'Voice' = 3
 }
 
 type RadioSettings = {
@@ -75,12 +75,12 @@ type RadioSettings = {
   step: number
   rxSplit: number
   txSplit: number
-  pttMode: typeof PttOptions
+  pttMode: PttOptions
   txModMeter: number
   micGain: number
   txDeviation: number
   xtal671: number
-  battStyle: typeof BattOptions
+  battStyle: BattOptions
   scanRange: number
   scanPersist: number
   scanResume: number
@@ -96,10 +96,10 @@ type RadioSettings = {
   keyLock: number
   bluetooth: number
   powerSave: number
-  keyTones: typeof KeytoneOptions
+  keyTones: KeytoneOptions
   ste: number
   rfGain: number
-  sBarStyle: typeof SBarOptions
+  sBarStyle: SBarOptions
   sqNoiseLev: number
   lastFmtFreq: number
   vox: number
@@ -109,13 +109,13 @@ type RadioSettings = {
   dtmfSpeed: number
   noiseGate: number
   scanUpdate: number
-  asl: typeof ASLOptions
+  asl: ASLOptions
   disableFmt: number
   pin: number
-  pinAction: typeof PinActions
+  pinAction: PinActions
   lcdInverted: number
-  afFilters: typeof AfFilters
-  ifFreq: typeof IfOptions
+  afFilters: AfFilters
+  ifFreq: IfOptions
   sBarAlwaysOn: number
   filler: Buffer
 }

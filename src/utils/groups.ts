@@ -1,4 +1,4 @@
-import { ChannelGroups } from '../renderer/src/types/channel'
+import { ChannelGroups } from '../main/types/channel'
 
 /**
  * Shifts all defined groups to the first available slots

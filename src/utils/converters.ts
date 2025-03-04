@@ -1,4 +1,4 @@
-import { ChannelGroups } from "@renderer/types/channel";
+import { ChannelGroups } from '../main/types'
 
 export function toDecimalFreq(bkfreq) {
   return (bkfreq >>> 0) / 100000;

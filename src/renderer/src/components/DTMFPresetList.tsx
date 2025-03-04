@@ -31,7 +31,7 @@ import {
   ArrowTurnDownRightRegular
 } from '@fluentui/react-icons'
 import React, { useEffect, useState } from 'react'
-import { DTMFPreset } from '../types'
+import { DTMFPreset } from '../../../main/types'
 import EditDTMFPresetDialog from './EditDTMFPresetDialog'
 
 const useStyles = makeStyles({

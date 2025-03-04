@@ -27,7 +27,7 @@ import {
   DeleteRegular
 } from '@fluentui/react-icons'
 import React, { useState, useEffect } from 'react'
-import { ScanPreset } from '../types'
+import { ScanPreset } from '../../../main/types'
 import EditScanPresetDialog from './EditScanPresetDialog'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 

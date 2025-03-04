@@ -1,4 +1,4 @@
-import { DTMFPreset } from '../renderer/src/types';
+import { DTMFPreset } from '../main/types';
 
 /**
  * Decodes raw DTMF preset data from a buffer.

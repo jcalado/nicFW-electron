@@ -6,7 +6,7 @@ import { readBandPlan } from '../../radio/band-plan.js'
 import { readSettings, writeSettings } from '../../radio/settings.js'
 import { readCodeplug, writeCodeplug, saveCodeplug } from '../../radio/codeplug.js'
 import fs from 'fs'
-import { Channel, Group } from '../../renderer/src/types'
+import { Channel, Group } from '../types'
 
 export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): void {
 
@@ -53,19 +53,9 @@ export function setupRadioHandlers(radio: RadioCommunicator, codeplugService): v
   })
 
   ipcMain.handle('radio:readSettings', async (_e) => {
-    try {
-      if (!radio.portAvailable) {
-        await radio.port?.open()
-      }
-      await radio.connect()
-      await radio.initialize()
-      const settings = await readSettings(radio)
-      // Re-enable radio
-      await radio.executeCommand([0x46], { waitForResponse: true, expectedLength: 1 })
-      return settings
-    } catch (error) {
-      console.error('Error connecting to serial port:', error)
-    }
+    console.log('Reading settings...')
+    const settings = await codeplugService.readSettings()
+    return settings
   })
 
   ipcMain.handle('radio:writeSettings', async (_e, settings) => {

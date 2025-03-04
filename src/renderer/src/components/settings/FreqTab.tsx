@@ -1,5 +1,5 @@
 import { Dropdown, InfoLabel, Input, Option, Switch, tokens } from '@fluentui/react-components'
-import { IfOptions } from '@renderer/types/radioSettings'
+import { IfOptions } from '@main/types'
 import React from 'react'
 
 export const FreqTab = ({ settings, onChange }) => {

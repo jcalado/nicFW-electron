@@ -1,8 +1,16 @@
 import { FC, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Tab, TabList, Toolbar, ToolbarButton } from '@fluentui/react-components'
-import { RadioSettings } from '@renderer/types/radioSettings'
-import { ArrowDownloadRegular, ArrowUploadRegular, SaveRegular } from '@fluentui/react-icons'
+import {
+  SelectTabData,
+  SelectTabEvent,
+  Tab,
+  TabList,
+  TabValue,
+  Toolbar,
+  ToolbarButton
+} from '@fluentui/react-components'
+import { RadioSettings } from '@main/types'
+import { ArrowDownloadRegular, ArrowUploadRegular } from '@fluentui/react-icons'
 import { DisplayTab, TxTab, DeviceTab, FreqTab, ScanTab } from './settings/index'
 
 interface SettingsProps {
@@ -12,7 +20,7 @@ interface SettingsProps {
 }
 
 const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) => {
-  const [selectedTab, setSelectedTab] = useState('tab2')
+  const [selectedTab, setSelectedTab] = useState<TabValue>('tab2')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSettingsChange = (key: string, value: string | number): void => {
@@ -56,10 +64,7 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
       })
   }
 
-  const handleOnTabSelect = (
-    event: React.MouseEvent<HTMLElement>,
-    data: { value: string }
-  ): void => {
+  const handleOnTabSelect = (_event: SelectTabEvent, data: SelectTabData): void => {
     setSelectedTab(data.value)
   }
 
@@ -115,7 +120,9 @@ const Settings: FC<SettingsProps> = ({ settings, onSettingsRead, isConnected }) 
         {selectedTab === 'tab2' && <FreqTab settings={settings} onChange={handleSettingsChange} />}
         {selectedTab === 'tab3' && <TxTab settings={settings} />}
         {selectedTab === 'tab4' && <ScanTab settings={settings} onChange={handleSettingsChange} />}
-        {selectedTab === 'tab5' && <DisplayTab settings={settings} onChange={handleSettingsChange}/>}
+        {selectedTab === 'tab5' && (
+          <DisplayTab settings={settings} onChange={handleSettingsChange} />
+        )}
       </div>
     </div>
   )

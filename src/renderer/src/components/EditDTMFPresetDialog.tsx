@@ -11,7 +11,7 @@ import {
   makeStyles,
   Text
 } from '@fluentui/react-components'
-import { DTMFPreset } from '../types'
+import { DTMFPreset } from '../../../main/types'
 import React from 'react'
 
 const useStyles = makeStyles({

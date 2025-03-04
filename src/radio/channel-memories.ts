@@ -1,6 +1,6 @@
 import { toToneString, toToneWord, toGroupBytes } from '../utils/converters'
 import { compactGroups } from '../utils/groups'
-import { Channel, RxModulation, PttID } from '../renderer/src/types/channel.js'
+import { Channel, RxModulation, PttID } from '../main/types/channel'
 
 export function decodeChannelBlock(block): Channel | null {
   const rx = block.readUInt32BE(0)
@@ -35,6 +35,7 @@ export function decodeChannelBlock(block): Channel | null {
   // Reserved bytes (optional – returning as Buffer)
   const reserved = block.subarray(16, 20)
 
+  // eslint-disable-next-line no-control-regex
   const name = block.subarray(20, 32).toString('ascii').replace(/\x00/g, '')
 
   return {

@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { RadioSettings } from '@renderer/types/radioSettings'
+import { RadioSettings } from '@main/types'
 import { SerialPort } from 'serialport'
 export interface IApi {
   loadPreferences: () => Promise<void>

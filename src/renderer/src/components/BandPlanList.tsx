@@ -12,7 +12,7 @@ import {
 } from '@fluentui/react-components'
 import { ArrowDownloadRegular, ArrowUploadRegular, DocumentBulletListRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useState } from 'react'
-import { Band } from '../types'
+import { Band } from '../../../main/types'
 import EditBandDialog from './EditBandDialog'
 
 function BandPlanList({ bands, isConnected, onBandsReceived }) {
