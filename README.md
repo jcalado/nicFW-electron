@@ -13,7 +13,10 @@
   <a href="#license">License</a>
 </p>
 
----
+
+> [!WARNING]  
+> There's a bit of confusion around the code since I was working through refactoring some stuff like codeplug management and when and how to read and write data to the radio. Since then Marcus move development to patreon, to which i'm not subscribed, and removed his webpage which this app relied on to get the latest nightlies.
+
 
 ## Features
 
