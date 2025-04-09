@@ -96,7 +96,6 @@ export class FirmwareDownloader {
       return { updated: true, version, path: outputPath }
     } catch (error) {
       console.error(chalk.red('Firmware check failed:'), error.message)
-      throw error
     }
   }
 
@@ -111,7 +110,6 @@ export class FirmwareDownloader {
       return { version, firmwareLink, releaseType }
     } catch (error) {
       console.error('Firmware check failed:', error.message)
-      throw error
     }
   }
 }
