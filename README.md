@@ -39,6 +39,9 @@
 - Automatic port detection
 - Progress indication for long operations
 
+## Screenshots
+![Screenshot From 2025-04-09 08-55-18](https://github.com/user-attachments/assets/c147819f-f667-40e6-acd9-eab2301c30fc)
+
 ## Installation
 
 Download the latest release for your operating system:
